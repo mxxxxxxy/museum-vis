@@ -390,6 +390,12 @@ button {
   background: var(--brand-strong);
 }
 
+.primary-button:disabled {
+  background: var(--line);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
 .secondary-button,
 .capture-button {
   border-color: var(--line);
@@ -602,6 +608,13 @@ button {
   letter-spacing: 0;
 }
 
+.section-heading-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
 .item-tabs {
   display: flex;
   gap: 8px;
@@ -630,6 +643,17 @@ button {
   display: grid;
   gap: 16px;
   padding-top: 4px;
+}
+
+.item-name-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.item-name-field {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .media-grid {
@@ -835,13 +859,6 @@ button {
   padding: 12px;
 }
 
-.drawer-title {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-}
-
 .drawer-empty {
   margin: 0;
   color: var(--muted);
@@ -856,12 +873,19 @@ button {
   list-style: none;
 }
 
-.viz-item-row {
+.viz-item {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.viz-item-main {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
-  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
   min-height: 48px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -872,16 +896,28 @@ button {
   cursor: pointer;
 }
 
+.viz-item-del {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--danger);
+  cursor: pointer;
+}
+
 .viz-serial {
   display: inline-grid;
   place-items: center;
-  min-width: 66px;
+  min-width: 32px;
   height: 28px;
-  padding: 0 6px;
+  padding: 0 8px;
   border-radius: 6px;
   background: rgba(15, 118, 110, 0.1);
   color: var(--brand);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
 }
 
@@ -990,13 +1026,13 @@ button {
 
 .field-emphasis textarea {
   min-height: 120px;
-  border-color: rgba(15, 118, 110, 0.4);
-  background: rgba(15, 118, 110, 0.04);
 }
 
 .field-emphasis b {
-  background: rgba(15, 118, 110, 0.14);
-  color: var(--brand-strong);
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .choice-block,
