@@ -1766,6 +1766,10 @@ button {
   margin-inline: auto;
 }
 
+.success-panel .action-row {
+  margin-top: 14px;
+}
+
 .stage-nav {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
