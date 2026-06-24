@@ -16,12 +16,14 @@ export function ReviewScreen({
   stats,
   onJumpTo,
   onExport,
+  showExportActions,
   onSubmit,
 }: {
   draft: Draft;
   stats: Stats;
   onJumpTo: (target: ReviewTarget) => void;
   onExport: () => void;
+  showExportActions: boolean;
   onSubmit: () => void;
 }) {
   const [overviewOpen, setOverviewOpen] = useState(false);
@@ -118,6 +120,7 @@ export function ReviewScreen({
               {
                 提交编号: draft.id,
                 收集人: draft.info.submitterName,
+                手机号: draft.info.submitterPhone,
                 博物馆: draft.info.museumName,
                 展览: draft.info.exhibitionName,
                 展览平面图: draft.floorplanAssets.length,
@@ -134,10 +137,12 @@ export function ReviewScreen({
         ) : null}
       </div>
       <div className="action-row">
-        <button className="secondary-button" type="button" onClick={onExport}>
-          <Download size={18} />
-          导出数据包
-        </button>
+        {showExportActions ? (
+          <button className="secondary-button" type="button" onClick={onExport}>
+            <Download size={18} />
+            导出数据包
+          </button>
+        ) : null}
         <button
           className="primary-button"
           type="button"

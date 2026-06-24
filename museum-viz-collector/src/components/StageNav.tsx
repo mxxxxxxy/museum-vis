@@ -4,12 +4,14 @@ import type { Screen } from "../types";
 export function StageNav({
   screen,
   canCollect = true,
+  canReview = true,
   onHome,
   onCollect,
   onReview,
 }: {
   screen: Screen;
   canCollect?: boolean;
+  canReview?: boolean;
   onHome: () => void;
   onCollect: () => void;
   onReview: () => void;
@@ -30,14 +32,20 @@ export function StageNav({
         type="button"
         onClick={onCollect}
         disabled={!canCollect}
-        title={canCollect ? undefined : "请先填完基础信息"}
+        title={canCollect ? undefined : "请先在首页填完信息并点击「数据收集」"}
       >
         <MapPinned size={18} />
-        <span>2 采集</span>
+        <span>2 调研</span>
       </button>
-      <button className={screen === "review" ? "active" : ""} type="button" onClick={onReview}>
+      <button
+        className={screen === "review" ? "active" : ""}
+        type="button"
+        onClick={onReview}
+        disabled={!canReview}
+        title={canReview ? undefined : "请先在首页填完信息并点击「数据收集」"}
+      >
         <ClipboardList size={18} />
-        <span>3 检查</span>
+        <span>3 提交</span>
       </button>
     </nav>
   );

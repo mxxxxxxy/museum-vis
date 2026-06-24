@@ -96,7 +96,7 @@ function UnitCard({
           <span className="unit-card-text">
             <strong>{unit.name || "未命名单元"}</strong>
             <em>
-              {unit.items.length} 个可视化项 · {unit.environmentAssets.length} 张环境图
+              {unit.items.length} 个可视化 - {unit.environmentAssets.length} 张环境图
             </em>
           </span>
         </button>
@@ -105,7 +105,7 @@ function UnitCard({
           type="button"
           onClick={onToggle}
           aria-expanded={expanded}
-          aria-label="展开 / 收起可视化项"
+          aria-label="展开 / 收起可视化"
         >
           <ChevronDown size={20} className={expanded ? "chevron-open" : "chevron"} />
         </button>
@@ -122,14 +122,14 @@ function UnitCard({
                     onClick={() => onOpenItem(item.id)}
                   >
                     <span className="viz-serial">{item.serial}</span>
-                    <span className="viz-title">{item.title || "未命名可视化项"}</span>
+                    <span className="viz-title">{item.title || "未命名可视化"}</span>
                     <ChevronRight size={16} />
                   </button>
                   <button
                     className="viz-item-del"
                     type="button"
                     onClick={() => onRemoveItem(item.id)}
-                    aria-label="删除可视化项"
+                    aria-label="删除可视化"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -139,7 +139,7 @@ function UnitCard({
           ) : null}
           <button className="secondary-button block" type="button" onClick={onAddItem}>
             <Plus size={16} />
-            添加可视化项
+            添加可视化
           </button>
         </div>
       ) : null}

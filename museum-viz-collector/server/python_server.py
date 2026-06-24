@@ -96,13 +96,34 @@ def normalize_user_name(value):
     return str(value or "").strip()[:80]
 
 
-def user_key_for(user_name):
-    digest = hashlib.sha256(normalize_user_name(user_name).encode("utf-8")).hexdigest()[:12]
+def normalize_user_phone(value):
+    return re.sub(r"\D", "", str(value or ""))[:32]
+
+
+def user_key_for(user_name, user_phone):
+    identity = normalize_user_name(user_name) + "|" + normalize_user_phone(user_phone)
+    digest = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:12]
     return "user_" + digest
 
 
-def draft_id_for_user(user_name):
-    return user_key_for(user_name)
+def draft_id_for_user(user_name, user_phone):
+    return user_key_for(user_name, user_phone)
+
+
+def identity_from_payload(body):
+    draft_info = ((body or {}).get("draft") or {}).get("info") or {}
+    user_name = normalize_user_name((body or {}).get("userName") or draft_info.get("submitterName"))
+    user_phone = normalize_user_phone(
+        (body or {}).get("userPhone")
+        or draft_info.get("submitterPhone")
+    )
+    return user_name, user_phone
+
+
+def identity_from_query(query):
+    user_name = normalize_user_name((query.get("userName") or [""])[0])
+    user_phone = normalize_user_phone((query.get("userPhone") or query.get("submitterPhone") or [""])[0])
+    return user_name, user_phone
 
 
 def clean_asset_id(value):
@@ -118,8 +139,8 @@ def clean_role(value):
     return value if value in ("environment", "floorplan", "photo", "audio") else "photo"
 
 
-def submission_dir(user_name):
-    return SUBMISSIONS_ROOT / user_key_for(user_name)
+def submission_dir(user_name, user_phone):
+    return SUBMISSIONS_ROOT / user_key_for(user_name, user_phone)
 
 
 def safe_join(root, relative):
@@ -132,11 +153,24 @@ def safe_join(root, relative):
     return target
 
 
-def normalize_stored_draft(input_draft, user_name):
+def normalize_stored_draft(input_draft, user_name, user_phone):
     draft = dict(input_draft or {})
-    info = dict(draft.get("info") or {})
-    info["submitterName"] = user_name
-    draft["id"] = draft_id_for_user(user_name)
+    raw_info = dict(draft.get("info") or {})
+    info = {
+        "submitterName": user_name,
+        "submitterOrg": str(raw_info.get("submitterOrg") or ""),
+        "submitterPhone": user_phone,
+        "submitterEmail": str(raw_info.get("submitterEmail") or ""),
+        "visitDate": str(raw_info.get("visitDate") or ""),
+        "city": str(raw_info.get("city") or ""),
+        "museumName": str(raw_info.get("museumName") or ""),
+        "museumAddress": str(raw_info.get("museumAddress") or ""),
+        "exhibitionName": str(raw_info.get("exhibitionName") or ""),
+        "exhibitionPeriod": str(raw_info.get("exhibitionPeriod") or ""),
+        "exhibitionLink": str(raw_info.get("exhibitionLink") or ""),
+        "exhibitionIntro": str(raw_info.get("exhibitionIntro") or ""),
+    }
+    draft["id"] = draft_id_for_user(user_name, user_phone)
     draft["info"] = info
     draft["units"] = draft.get("units") if isinstance(draft.get("units"), list) else []
     draft["createdAt"] = draft.get("createdAt") or now_iso()
@@ -144,50 +178,35 @@ def normalize_stored_draft(input_draft, user_name):
     return draft
 
 
-def prepare_draft(input_draft, user_name):
-    draft = normalize_stored_draft(input_draft, user_name)
+def prepare_draft(input_draft, user_name, user_phone):
+    draft = normalize_stored_draft(input_draft, user_name, user_phone)
     draft["updatedAt"] = now_iso()
     draft["status"] = draft.get("status") or "draft"
     return draft
 
 
-def read_draft_file(path, user_name):
+def read_draft_file(path, user_name, user_phone):
     try:
         with path.open("r", encoding="utf-8") as file:
-            return normalize_stored_draft(json.load(file), user_name)
+            return normalize_stored_draft(json.load(file), user_name, user_phone)
     except Exception:
         return None
 
 
-def read_legacy_draft(user_name):
-    root = SUBMISSIONS_ROOT / user_key_for(user_name)
-    if not root.exists():
-        return None
-    drafts = []
-    for child in root.iterdir():
-        if child.is_dir():
-            draft = read_draft_file(child / "draft.json", user_name)
-            if draft:
-                drafts.append(draft)
-    drafts.sort(key=lambda draft: str(draft.get("updatedAt") or ""), reverse=True)
-    return drafts[0] if drafts else None
+def read_draft(user_name, user_phone):
+    return read_draft_file(submission_dir(user_name, user_phone) / "draft.json", user_name, user_phone)
 
 
-def read_draft(user_name):
-    draft = read_draft_file(submission_dir(user_name) / "draft.json", user_name)
-    return draft or read_legacy_draft(user_name)
-
-
-def write_draft(user_name, draft):
-    directory = submission_dir(user_name)
+def write_draft(user_name, user_phone, draft):
+    directory = submission_dir(user_name, user_phone)
     directory.mkdir(parents=True, exist_ok=True)
     with (directory / "draft.json").open("w", encoding="utf-8") as file:
         json.dump(draft, file, ensure_ascii=False, indent=2)
         file.write("\n")
 
 
-def find_current_draft(user_name):
-    return read_draft(user_name)
+def find_current_draft(user_name, user_phone):
+    return read_draft(user_name, user_phone)
 
 
 def is_allowed_upload_type(mime_type):
@@ -381,12 +400,12 @@ VOICE_SECTION_LABELS = {
 }
 
 
-def save_voice_file(user_name, audio_bytes, mime_type, original_name):
+def save_voice_file(user_name, user_phone, audio_bytes, mime_type, original_name):
     """把语音输入的原始录音存到 uploads/<user>/audio/，返回 {id, name, url}。"""
     asset_id = str(uuid.uuid4())
     extension = extension_for(mime_type, original_name)
     file_name = asset_id + extension
-    user_key = user_key_for(user_name)
+    user_key = user_key_for(user_name, user_phone)
     audio_dir = UPLOADS_ROOT / user_key / "audio"
     audio_dir.mkdir(parents=True, exist_ok=True)
     with (audio_dir / file_name).open("wb") as output:
@@ -398,9 +417,9 @@ def save_voice_file(user_name, audio_bytes, mime_type, original_name):
     }
 
 
-def append_voice_log(user_name, record):
+def append_voice_log(user_name, user_phone, record):
     """把一条语音录音的元数据按时间先后追加到后台日志（每行一条 JSON）。"""
-    user_key = user_key_for(user_name)
+    user_key = user_key_for(user_name, user_phone)
     log_dir = SUBMISSIONS_ROOT / user_key
     log_dir.mkdir(parents=True, exist_ok=True)
     with (log_dir / "voice_recordings.jsonl").open("a", encoding="utf-8") as log_file:
@@ -519,31 +538,37 @@ class MuseumVizHandler(BaseHTTPRequestHandler):
 
             if self.command == "POST" and path == API_PREFIX + "/session":
                 body = self.read_json()
-                user_name = normalize_user_name(body.get("userName") or (body.get("draft") or {}).get("info", {}).get("submitterName"))
+                user_name, user_phone = identity_from_payload(body)
                 if not user_name:
                     return self.send_json(400, {"error": "USER_NAME_REQUIRED"})
-                existing = find_current_draft(user_name)
+                if not user_phone:
+                    return self.send_json(400, {"error": "USER_PHONE_REQUIRED"})
+                existing = find_current_draft(user_name, user_phone)
                 if existing:
-                    write_draft(user_name, existing)
-                    return self.send_json(200, {"draft": existing, "userName": user_name, "userKey": user_key_for(user_name)})
-                draft = prepare_draft(body.get("draft") or {}, user_name)
-                write_draft(user_name, draft)
-                return self.send_json(201, {"draft": draft, "userName": user_name, "userKey": user_key_for(user_name)})
+                    write_draft(user_name, user_phone, existing)
+                    return self.send_json(200, {"draft": existing, "userName": user_name, "userPhone": user_phone, "userKey": user_key_for(user_name, user_phone)})
+                draft = prepare_draft(body.get("draft") or {}, user_name, user_phone)
+                write_draft(user_name, user_phone, draft)
+                return self.send_json(201, {"draft": draft, "userName": user_name, "userPhone": user_phone, "userKey": user_key_for(user_name, user_phone)})
 
             if self.command == "GET" and path == API_PREFIX + "/submissions/current":
-                user_name = normalize_user_name((query.get("userName") or [""])[0])
+                user_name, user_phone = identity_from_query(query)
                 if not user_name:
                     return self.send_json(400, {"error": "USER_NAME_REQUIRED"})
-                return self.send_json(200, {"draft": find_current_draft(user_name), "userName": user_name, "userKey": user_key_for(user_name)})
+                if not user_phone:
+                    return self.send_json(400, {"error": "USER_PHONE_REQUIRED"})
+                return self.send_json(200, {"draft": find_current_draft(user_name, user_phone), "userName": user_name, "userPhone": user_phone, "userKey": user_key_for(user_name, user_phone)})
 
             if self.command == "PUT" and path == API_PREFIX + "/draft":
                 body = self.read_json()
-                user_name = normalize_user_name(body.get("userName") or (body.get("draft") or {}).get("info", {}).get("submitterName"))
+                user_name, user_phone = identity_from_payload(body)
                 if not user_name:
                     return self.send_json(400, {"error": "USER_NAME_REQUIRED"})
-                draft = prepare_draft(body.get("draft") or {}, user_name)
-                write_draft(user_name, draft)
-                return self.send_json(200, {"draft": draft, "userName": user_name, "userKey": user_key_for(user_name)})
+                if not user_phone:
+                    return self.send_json(400, {"error": "USER_PHONE_REQUIRED"})
+                draft = prepare_draft(body.get("draft") or {}, user_name, user_phone)
+                write_draft(user_name, user_phone, draft)
+                return self.send_json(200, {"draft": draft, "userName": user_name, "userPhone": user_phone, "userKey": user_key_for(user_name, user_phone)})
 
             if self.command == "POST" and path == API_PREFIX + "/assets":
                 return self.handle_upload()
@@ -555,26 +580,34 @@ class MuseumVizHandler(BaseHTTPRequestHandler):
             if match and self.command == "DELETE":
                 asset_id = clean_asset_id(match.group(1))
                 body = self.read_json(optional=True)
-                user_name = normalize_user_name(body.get("userName") or (query.get("userName") or [""])[0])
+                user_name, user_phone = identity_from_payload(body)
+                if not user_name:
+                    user_name, user_phone = identity_from_query(query)
                 if not user_name:
                     return self.send_json(400, {"error": "USER_NAME_REQUIRED"})
+                if not user_phone:
+                    return self.send_json(400, {"error": "USER_PHONE_REQUIRED"})
                 self.remove_asset_file(body.get("url"))
                 return self.send_json(200, {"ok": True})
 
             if self.command == "POST" and path == API_PREFIX + "/submit":
                 body = self.read_json()
-                user_name = normalize_user_name(body.get("userName") or (body.get("draft") or {}).get("info", {}).get("submitterName"))
+                user_name, user_phone = identity_from_payload(body)
                 if not user_name:
                     return self.send_json(400, {"error": "USER_NAME_REQUIRED"})
-                draft = prepare_draft({**(body.get("draft") or {}), "status": "submitted", "submittedAt": now_iso()}, user_name)
-                write_draft(user_name, draft)
-                return self.send_json(200, {"draft": draft, "userName": user_name, "userKey": user_key_for(user_name)})
+                if not user_phone:
+                    return self.send_json(400, {"error": "USER_PHONE_REQUIRED"})
+                draft = prepare_draft({**(body.get("draft") or {}), "status": "submitted", "submittedAt": now_iso()}, user_name, user_phone)
+                write_draft(user_name, user_phone, draft)
+                return self.send_json(200, {"draft": draft, "userName": user_name, "userPhone": user_phone, "userKey": user_key_for(user_name, user_phone)})
 
             if self.command == "GET" and path == API_PREFIX + "/export":
-                user_name = normalize_user_name((query.get("userName") or [""])[0])
+                user_name, user_phone = identity_from_query(query)
                 if not user_name:
                     return self.send_json(400, {"error": "USER_NAME_REQUIRED"})
-                draft = read_draft(user_name)
+                if not user_phone:
+                    return self.send_json(400, {"error": "USER_PHONE_REQUIRED"})
+                draft = read_draft(user_name, user_phone)
                 if not draft:
                     return self.send_json(404, {"error": "NOT_FOUND"})
                 return self.send_json(200, draft)
@@ -582,12 +615,14 @@ class MuseumVizHandler(BaseHTTPRequestHandler):
             match = re.fullmatch(re.escape(API_PREFIX) + r"/submissions/([^/]+)", path)
             if match and self.command == "PUT":
                 body = self.read_json()
-                user_name = normalize_user_name(body.get("userName") or (body.get("draft") or {}).get("info", {}).get("submitterName"))
+                user_name, user_phone = identity_from_payload(body)
                 if not user_name:
                     return self.send_json(400, {"error": "USER_NAME_REQUIRED"})
-                draft = prepare_draft(body.get("draft") or {}, user_name)
-                write_draft(user_name, draft)
-                return self.send_json(200, {"draft": draft, "userName": user_name, "userKey": user_key_for(user_name)})
+                if not user_phone:
+                    return self.send_json(400, {"error": "USER_PHONE_REQUIRED"})
+                draft = prepare_draft(body.get("draft") or {}, user_name, user_phone)
+                write_draft(user_name, user_phone, draft)
+                return self.send_json(200, {"draft": draft, "userName": user_name, "userPhone": user_phone, "userKey": user_key_for(user_name, user_phone)})
 
             match = re.fullmatch(re.escape(API_PREFIX) + r"/submissions/([^/]+)/assets", path)
             if match and self.command == "POST":
@@ -597,28 +632,36 @@ class MuseumVizHandler(BaseHTTPRequestHandler):
             if match and self.command == "DELETE":
                 asset_id = clean_asset_id(match.group(2))
                 body = self.read_json(optional=True)
-                user_name = normalize_user_name(body.get("userName") or (query.get("userName") or [""])[0])
+                user_name, user_phone = identity_from_payload(body)
+                if not user_name:
+                    user_name, user_phone = identity_from_query(query)
                 if not user_name:
                     return self.send_json(400, {"error": "USER_NAME_REQUIRED"})
+                if not user_phone:
+                    return self.send_json(400, {"error": "USER_PHONE_REQUIRED"})
                 self.remove_asset_file(body.get("url"))
                 return self.send_json(200, {"ok": True})
 
             match = re.fullmatch(re.escape(API_PREFIX) + r"/submissions/([^/]+)/submit", path)
             if match and self.command == "POST":
                 body = self.read_json()
-                user_name = normalize_user_name(body.get("userName") or (body.get("draft") or {}).get("info", {}).get("submitterName"))
+                user_name, user_phone = identity_from_payload(body)
                 if not user_name:
                     return self.send_json(400, {"error": "USER_NAME_REQUIRED"})
-                draft = prepare_draft({**(body.get("draft") or {}), "status": "submitted", "submittedAt": now_iso()}, user_name)
-                write_draft(user_name, draft)
-                return self.send_json(200, {"draft": draft, "userName": user_name, "userKey": user_key_for(user_name)})
+                if not user_phone:
+                    return self.send_json(400, {"error": "USER_PHONE_REQUIRED"})
+                draft = prepare_draft({**(body.get("draft") or {}), "status": "submitted", "submittedAt": now_iso()}, user_name, user_phone)
+                write_draft(user_name, user_phone, draft)
+                return self.send_json(200, {"draft": draft, "userName": user_name, "userPhone": user_phone, "userKey": user_key_for(user_name, user_phone)})
 
             match = re.fullmatch(re.escape(API_PREFIX) + r"/submissions/([^/]+)/export", path)
             if match and self.command == "GET":
-                user_name = normalize_user_name((query.get("userName") or [""])[0])
+                user_name, user_phone = identity_from_query(query)
                 if not user_name:
                     return self.send_json(400, {"error": "USER_NAME_REQUIRED"})
-                draft = read_draft(user_name)
+                if not user_phone:
+                    return self.send_json(400, {"error": "USER_PHONE_REQUIRED"})
+                draft = read_draft(user_name, user_phone)
                 if not draft:
                     return self.send_json(404, {"error": "NOT_FOUND"})
                 return self.send_json(200, draft)
@@ -658,6 +701,7 @@ class MuseumVizHandler(BaseHTTPRequestHandler):
             return self.send_json(413, {"error": "FILE_TOO_LARGE", "maxBytes": MAX_UPLOAD_BYTES})
 
         user_name = normalize_user_name(form.getfirst("userName", ""))
+        user_phone = normalize_user_phone(form.getfirst("userPhone", ""))
         role = clean_role(form.getfirst("role", "photo"))
         label = form.getfirst("label", role)
         unit_id = clean_optional_id(form.getfirst("unitId", ""))
@@ -668,6 +712,8 @@ class MuseumVizHandler(BaseHTTPRequestHandler):
 
         if not user_name:
             return self.send_json(400, {"error": "USER_NAME_REQUIRED"})
+        if not user_phone:
+            return self.send_json(400, {"error": "USER_PHONE_REQUIRED"})
         if file_item is None or not getattr(file_item, "file", None):
             return self.send_json(400, {"error": "FILE_REQUIRED"})
 
@@ -678,7 +724,7 @@ class MuseumVizHandler(BaseHTTPRequestHandler):
         asset_id = str(uuid.uuid4())
         extension = extension_for(mime_type, file_item.filename)
         file_name = asset_id + extension
-        user_key = user_key_for(user_name)
+        user_key = user_key_for(user_name, user_phone)
         role_folder = (
             "environment"
             if role == "environment"
@@ -721,7 +767,7 @@ class MuseumVizHandler(BaseHTTPRequestHandler):
             "unitId": unit_id,
             "itemId": item_id,
         }
-        return self.send_json(201, {"asset": asset, "userName": user_name, "userKey": user_key})
+        return self.send_json(201, {"asset": asset, "userName": user_name, "userPhone": user_phone, "userKey": user_key})
 
     def handle_transcribe(self):
         if not TENCENT_SECRET_ID or not TENCENT_SECRET_KEY:
@@ -742,17 +788,18 @@ class MuseumVizHandler(BaseHTTPRequestHandler):
             return self.send_json(400, {"error": "FILE_REQUIRED"})
 
         user_name = normalize_user_name(form.getfirst("userName", ""))
+        user_phone = normalize_user_phone(form.getfirst("userPhone", ""))
         unit_id = clean_optional_id(form.getfirst("unitId", ""))
         item_id = clean_optional_id(form.getfirst("itemId", ""))
         section = clean_optional_id(form.getfirst("section", ""))
         mime_type = file_item.type or mimetypes.guess_type(file_item.filename or "")[0] or ""
 
-        # 先把原始录音落盘留底（即使后面转写失败，也能以后重转）。只有带用户名才存。
-        saved = save_voice_file(user_name, audio_bytes, mime_type, file_item.filename) if user_name else None
+        # 先把原始录音落盘留底（即使后面转写失败，也能以后重转）。只有身份完整才存。
+        saved = save_voice_file(user_name, user_phone, audio_bytes, mime_type, file_item.filename) if user_name and user_phone else None
 
         def write_log(text, status, engine=""):
             if saved:
-                append_voice_log(user_name, {
+                append_voice_log(user_name, user_phone, {
                     "id": saved["id"],
                     "file": saved["name"],
                     "url": saved["url"],

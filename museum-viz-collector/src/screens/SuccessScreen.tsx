@@ -1,6 +1,14 @@
-import { Check, Download } from "lucide-react";
+import { Check, Download, Search } from "lucide-react";
 
-export function SuccessScreen({ onBack, onExport }: { onBack: () => void; onExport: () => void }) {
+export function SuccessScreen({
+  onBack,
+  onExport,
+  showExportActions,
+}: {
+  onBack: () => void;
+  onExport: () => void;
+  showExportActions: boolean;
+}) {
   return (
     <section className="screen">
       <div className="success-panel">
@@ -9,16 +17,21 @@ export function SuccessScreen({ onBack, onExport }: { onBack: () => void; onExpo
         </div>
         <h2>提交完成</h2>
         <p>
-          数据已提交到服务器。本地备份可以单独导出，不会和提交操作自动绑定。
+          {showExportActions
+            ? "本地备份可以单独导出。"
+            : "可继续补充内容。"}
         </p>
         <div className="action-row center">
-          <button className="secondary-button" type="button" onClick={onBack}>
-            继续采集
+          <button className="primary-button" type="button" onClick={onBack}>
+            <Search size={18} />
+            继续调研
           </button>
-          <button className="primary-button" type="button" onClick={onExport}>
-            <Download size={18} />
-            导出数据包
-          </button>
+          {showExportActions ? (
+            <button className="secondary-button" type="button" onClick={onExport}>
+              <Download size={18} />
+              导出数据包
+            </button>
+          ) : null}
         </div>
       </div>
     </section>

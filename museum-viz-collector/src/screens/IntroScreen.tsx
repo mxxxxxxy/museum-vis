@@ -109,6 +109,13 @@ export function IntroScreen({
                 required
                 onChange={(value) => patchInfo("submitterName", value)}
               />
+                            <InlineTextField
+                label="电话"
+                value={draft.info.submitterPhone}
+                type="tel"
+                required
+                onChange={(value) => patchInfo("submitterPhone", value)}
+              />
               <InlineTextField
                 label="单位"
                 value={draft.info.submitterOrg}
@@ -116,11 +123,12 @@ export function IntroScreen({
                 onChange={(value) => patchInfo("submitterOrg", value)}
               />
               <InlineTextField
-                label="联系方式"
-                value={draft.info.submitterContact}
-                placeholder="邮箱或手机号"
-                className="field-wide"
-                onChange={(value) => patchInfo("submitterContact", value)}
+                label="邮箱"
+                value={draft.info.submitterEmail}
+                type="email"
+                placeholder=""
+                required
+                onChange={(value) => patchInfo("submitterEmail", value)}
               />
             </div>
           </div>
@@ -237,7 +245,7 @@ export function IntroScreen({
           onClick={onContinue}
           disabled={!allComplete}
         >
-          数据收集
+          开始
           <ChevronRight size={18} />
         </button>
       </div>

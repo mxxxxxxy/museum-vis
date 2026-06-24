@@ -1,11 +1,16 @@
 import type { SubmissionInfo, VizDescriptionKey } from "./types";
 
-export const STORAGE_KEY = "museum-viz-collector-draft-v2";
+export const STORAGE_KEY = "museum-viz-collector-draft-v3";
+// 记录“是否已点过数据收集正式进入采集”，以便同设备刷新后不被打回锁定首页。
+export const ENTERED_KEY = "museum-viz-collector-entered-v1";
+// 全局控制所有“导出数据包”入口。导出逻辑保留，按部署/调试场景需要时改为 true。
+export const SHOW_EXPORT_DATA_PACKAGE_ACTIONS = false;
 
 export const emptyInfo: SubmissionInfo = {
   submitterName: "",
   submitterOrg: "",
-  submitterContact: "",
+  submitterPhone: "",
+  submitterEmail: "",
   visitDate: new Date().toISOString().slice(0, 10),
   city: "",
   museumName: "",

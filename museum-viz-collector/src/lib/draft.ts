@@ -145,13 +145,17 @@ export function normalizeUnits(
   });
 }
 
+function normalizeInfo(info: Partial<SubmissionInfo> = {}): SubmissionInfo {
+  return { ...emptyInfo, ...info };
+}
+
 export function normalizeDraft(draft: Partial<Draft>): Draft {
   const now = new Date().toISOString();
   return {
     id: draft.id ?? `draft-${Date.now().toString(36)}`,
     createdAt: draft.createdAt ?? now,
     updatedAt: draft.updatedAt ?? now,
-    info: { ...emptyInfo, ...(draft.info ?? {}) },
+    info: normalizeInfo(draft.info),
     floorplanAssets: (draft.floorplanAssets ?? []).map((asset) =>
       normalizeAsset(asset, "floorplan"),
     ),
@@ -166,6 +170,7 @@ export function createDraft(): Draft {
 export const COLLECTOR_REQUIRED_FIELDS: Array<keyof SubmissionInfo> = [
   "submitterName",
   "submitterOrg",
+  "submitterPhone",
 ];
 
 export const VENUE_REQUIRED_FIELDS: Array<keyof SubmissionInfo> = [
@@ -188,6 +193,7 @@ export function getRequiredInfoMissing(info: SubmissionInfo) {
   const fields: Array<[keyof SubmissionInfo, string]> = [
     ["submitterName", "收集人姓名"],
     ["submitterOrg", "收集人单位"],
+    ["submitterPhone", "手机号"],
     ["visitDate", "调研时间"],
     ["city", "所在城市"],
     ["museumName", "博物馆名称"],

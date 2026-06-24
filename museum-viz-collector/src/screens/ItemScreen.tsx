@@ -124,7 +124,7 @@ function ItemEditor({
           value={item.title}
           required
           invalid={titleInvalid}
-          placeholder="例如：北大百年校史时间线"
+          placeholder="例如：百年校史时间线"
           onChange={(value) => onPatch({ title: value })}
         />
       </div>

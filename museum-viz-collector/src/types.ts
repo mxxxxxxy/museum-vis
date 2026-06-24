@@ -4,7 +4,8 @@ export type AssetRole = "environment" | "floorplan" | "photo" | "audio";
 export type SubmissionInfo = {
   submitterName: string;
   submitterOrg: string;
-  submitterContact: string;
+  submitterPhone: string;
+  submitterEmail: string;
   visitDate: string;
   city: string;
   museumName: string;
