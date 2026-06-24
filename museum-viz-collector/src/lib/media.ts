@@ -64,6 +64,10 @@ async function compressImageFile(file: File): Promise<File> {
   }
 }
 
+export async function prepareMediaFile(file: File): Promise<File> {
+  return compressImageFile(file);
+}
+
 export async function filesToAssets(
   files: FileList | File[],
   role: AssetRole,
@@ -71,7 +75,7 @@ export async function filesToAssets(
 ): Promise<MediaAsset[]> {
   return Promise.all(
     Array.from(files).map(async (sourceFile) => {
-      const file = await compressImageFile(sourceFile);
+      const file = await prepareMediaFile(sourceFile);
       return {
         id: uid("asset"),
         role,

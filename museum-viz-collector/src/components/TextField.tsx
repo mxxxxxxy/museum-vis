@@ -15,8 +15,11 @@ export function TextField({
   required?: boolean;
   className?: string;
 }) {
+  const invalid = Boolean(required) && value.trim().length === 0;
   return (
-    <label className={`field${className ? ` ${className}` : ""}`}>
+    <label
+      className={`field${invalid ? " field-invalid" : ""}${className ? ` ${className}` : ""}`}
+    >
       <span>
         {label}
         {required ? <b>必填</b> : null}

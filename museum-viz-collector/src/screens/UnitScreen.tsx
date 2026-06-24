@@ -2,7 +2,6 @@ import { Camera, Check, Trash2 } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { MediaGrid } from "../components/MediaGrid";
 import { MediaInputGroup } from "../components/MediaInput";
-import { ScreenTop } from "../components/ScreenTop";
 import { TextField } from "../components/TextField";
 import type { AssetRole, Unit } from "../types";
 
@@ -23,8 +22,6 @@ export function UnitScreen({
 }) {
   return (
     <section className="screen session-screen">
-      <ScreenTop title={`${unit.serial} · ${unit.name || "未命名单元"}`} onBack={onBack} />
-
       <div className="panel">
         <div className="section-heading">
           <h2>单元信息</h2>
@@ -33,7 +30,7 @@ export function UnitScreen({
               className="primary-button small"
               type="button"
               onClick={onBack}
-              disabled={!unit.name.trim()}
+              disabled={!unit.name.trim() || !unit.description.trim()}
             >
               <Check size={16} /> 确认
             </button>
@@ -51,11 +48,6 @@ export function UnitScreen({
             className="field-wide"
             onChange={(value) => onPatchUnit({ name: value })}
           />
-          {!unit.name.trim() ? (
-            <div className="soft-warning field-wide">
-              单元名称为必填，请先填写，方便后续识别和整理。
-            </div>
-          ) : null}
           <label className="field field-wide">
             <span>单元描述</span>
             <textarea

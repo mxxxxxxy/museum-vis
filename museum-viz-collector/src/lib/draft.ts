@@ -41,9 +41,11 @@ function normalizeAsset(asset: Partial<MediaAsset> | undefined, fallbackRole: As
     role: asset?.role ?? fallbackRole,
     label: asset?.label ?? "照片",
     name: asset?.name ?? "photo.jpg",
+    originalName: asset?.originalName,
     type: asset?.type ?? "image/jpeg",
     size: asset?.size ?? 0,
     dataUrl: asset?.dataUrl ?? "",
+    url: asset?.url,
     createdAt: asset?.createdAt ?? new Date().toISOString(),
   };
 }
@@ -87,7 +89,7 @@ export function normalizeUnits(
 export function normalizeDraft(draft: Partial<Draft>): Draft {
   const now = new Date().toISOString();
   return {
-    id: draft.id ?? `SUB-${Date.now().toString(36).toUpperCase()}`,
+    id: draft.id ?? `draft-${Date.now().toString(36)}`,
     createdAt: draft.createdAt ?? now,
     updatedAt: draft.updatedAt ?? now,
     info: { ...emptyInfo, ...(draft.info ?? {}) },
@@ -97,6 +99,26 @@ export function normalizeDraft(draft: Partial<Draft>): Draft {
 
 export function createDraft(): Draft {
   return normalizeDraft({});
+}
+
+export const COLLECTOR_REQUIRED_FIELDS: Array<keyof SubmissionInfo> = [
+  "submitterName",
+  "submitterOrg",
+];
+
+export const VENUE_REQUIRED_FIELDS: Array<keyof SubmissionInfo> = [
+  "visitDate",
+  "city",
+  "museumName",
+  "museumAddress",
+  "exhibitionName",
+];
+
+export function isInfoSectionComplete(
+  info: SubmissionInfo,
+  fields: Array<keyof SubmissionInfo>,
+) {
+  return fields.every((field) => info[field].trim().length > 0);
 }
 
 export function getRequiredInfoMissing(info: SubmissionInfo) {

@@ -1,4 +1,4 @@
-import { ArrowLeft, Camera, FileImage } from "lucide-react";
+import { ArrowLeft, Camera, Check, FileImage, Mic } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { ChoiceBlock } from "../components/ChoiceBlock";
 import { EmptyState } from "../components/EmptyState";
@@ -6,7 +6,7 @@ import { MediaGrid } from "../components/MediaGrid";
 import { MediaInputGroup } from "../components/MediaInput";
 import { TextField } from "../components/TextField";
 import { mediaTypeOptions, visualizationTypeOptions } from "../constants";
-import type { TagKey, Unit, VizItem } from "../types";
+import type { AssetRole, TagKey, Unit, VizItem } from "../types";
 
 export function ItemScreen({
   unit,
@@ -22,7 +22,12 @@ export function ItemScreen({
   onBack: () => void;
   onPatchItem: (itemId: string, patch: Partial<VizItem>) => void;
   onToggleTag: (itemId: string, key: TagKey, value: string) => void;
-  onAddItemFiles: (event: ChangeEvent<HTMLInputElement>, itemId: string, label: string) => void;
+  onAddItemFiles: (
+    event: ChangeEvent<HTMLInputElement>,
+    itemId: string,
+    label: string,
+    role?: AssetRole,
+  ) => void;
   onRemoveItemAsset: (itemId: string, assetId: string) => void;
 }) {
   const activeItem = unit.items.find((item) => item.id === activeItemId) ?? unit.items[0];
@@ -54,7 +59,7 @@ export function ItemScreen({
           onBack={onBack}
           onPatch={(patch) => onPatchItem(activeItem.id, patch)}
           onToggleTag={(key, value) => onToggleTag(activeItem.id, key, value)}
-          onAddFiles={(event, label) => onAddItemFiles(event, activeItem.id, label)}
+          onAddFiles={(event, label, role) => onAddItemFiles(event, activeItem.id, label, role)}
           onRemoveAsset={(assetId) => onRemoveItemAsset(activeItem.id, assetId)}
         />
       </div>
@@ -74,16 +79,21 @@ function ItemEditor({
   onBack: () => void;
   onPatch: (patch: Partial<VizItem>) => void;
   onToggleTag: (key: TagKey, value: string) => void;
-  onAddFiles: (event: ChangeEvent<HTMLInputElement>, label: string) => void;
+  onAddFiles: (event: ChangeEvent<HTMLInputElement>, label: string, role?: AssetRole) => void;
   onRemoveAsset: (assetId: string) => void;
 }) {
   return (
     <div className="item-editor">
-      <div className="item-name-row">
-        <button className="icon-button" type="button" onClick={onBack} aria-label="返回">
-          <ArrowLeft size={20} />
-        </button>
-        <label className="field item-name-field">
+      <div className="item-name-block">
+        <div className="item-name-bar">
+          <button className="icon-button" type="button" onClick={onBack} aria-label="返回">
+            <ArrowLeft size={20} />
+          </button>
+          <button className="primary-button small" type="button" onClick={onBack}>
+            <Check size={16} /> 确认
+          </button>
+        </div>
+        <label className="field">
           <span>名称</span>
           <input
             type="text"
@@ -113,6 +123,15 @@ function ItemEditor({
             libraryLabel="从相册选"
             onChange={(event) => onAddFiles(event, "现场照片")}
           />
+          <label className="capture-button">
+            <Mic size={18} />
+            <span>上传录音</span>
+            <input
+              type="file"
+              accept="audio/*"
+              onChange={(event) => onAddFiles(event, "录音", "audio")}
+            />
+          </label>
         </div>
         <MediaGrid assets={item.photos} onRemove={onRemoveAsset} />
       </div>

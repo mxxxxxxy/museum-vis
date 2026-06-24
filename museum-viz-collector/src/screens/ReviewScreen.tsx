@@ -105,7 +105,7 @@ export function ReviewScreen({
         </button>
         <button className="primary-button" type="button" onClick={onSubmit}>
           <Check size={18} />
-          模拟提交
+          提交并导出
         </button>
       </div>
     </section>

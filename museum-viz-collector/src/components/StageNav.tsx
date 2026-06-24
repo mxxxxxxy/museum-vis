@@ -3,11 +3,13 @@ import type { Screen } from "../types";
 
 export function StageNav({
   screen,
+  canCollect = true,
   onHome,
   onCollect,
   onReview,
 }: {
   screen: Screen;
+  canCollect?: boolean;
   onHome: () => void;
   onCollect: () => void;
   onReview: () => void;
@@ -27,6 +29,8 @@ export function StageNav({
         className={screen === "collect" || screen === "unit" ? "active" : ""}
         type="button"
         onClick={onCollect}
+        disabled={!canCollect}
+        title={canCollect ? undefined : "请先填完基础信息"}
       >
         <MapPinned size={18} />
         <span>2 采集</span>

@@ -1,5 +1,5 @@
 export type Screen = "intro" | "info" | "collect" | "unit" | "item" | "review" | "success";
-export type AssetRole = "environment" | "floorplan" | "photo";
+export type AssetRole = "environment" | "floorplan" | "photo" | "audio";
 
 export type SubmissionInfo = {
   submitterName: string;
@@ -20,9 +20,11 @@ export type MediaAsset = {
   role: AssetRole;
   label: string;
   name: string;
+  originalName?: string;
   type: string;
   size: number;
-  dataUrl: string;
+  dataUrl?: string;
+  url?: string;
   createdAt: string;
 };
 

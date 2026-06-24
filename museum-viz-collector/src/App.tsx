@@ -1,5 +1,5 @@
 import { Save } from "lucide-react";
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { StageNav } from "./components/StageNav";
 import { STORAGE_KEY } from "./constants";
 import {
@@ -13,14 +13,21 @@ import {
   renumberItems,
 } from "./lib/draft";
 import { downloadTextFile, filesToAssets } from "./lib/media";
+import {
+  deleteAssetFromServer,
+  getDraftUserName,
+  openServerSession,
+  saveDraftToServer,
+  submitDraftToServer,
+  uploadAssetToServer,
+} from "./lib/serverStorage";
 import { CollectScreen } from "./screens/CollectScreen";
-import { InfoScreen } from "./screens/InfoScreen";
 import { IntroScreen } from "./screens/IntroScreen";
 import { ItemScreen } from "./screens/ItemScreen";
 import { ReviewScreen } from "./screens/ReviewScreen";
 import { SuccessScreen } from "./screens/SuccessScreen";
 import { UnitScreen } from "./screens/UnitScreen";
-import type { AssetRole, Screen, SubmissionInfo, TagKey, Unit, VizItem } from "./types";
+import type { AssetRole, MediaAsset, Screen, SubmissionInfo, TagKey, Unit, VizItem } from "./types";
 
 function App() {
   const [draft, setDraft] = useState(() => {
@@ -35,6 +42,10 @@ function App() {
   const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
+  const [storageLabel, setStorageLabel] = useState("本地草稿");
+  const sessionTimerRef = useRef<number | null>(null);
+  const serverSessionUserRef = useRef("");
+  const saveTimerRef = useRef<number | null>(null);
 
   const activeUnit = useMemo(
     () => draft.units.find((unit) => unit.id === activeUnitId) ?? null,
@@ -42,8 +53,26 @@ function App() {
   );
 
   const stats = countAssets(draft);
-  const hasCollectionProgress = draft.units.length > 0;
   const missingInfo = getRequiredInfoMissing(draft.info);
+
+  useEffect(() => {
+    const userName = getDraftUserName(draft);
+    if (!userName || serverSessionUserRef.current === userName) return;
+    if (sessionTimerRef.current) window.clearTimeout(sessionTimerRef.current);
+
+    sessionTimerRef.current = window.setTimeout(() => {
+      openServerSession(userName, draft)
+        .then(({ draft: serverDraft }) => {
+          serverSessionUserRef.current = userName;
+          setStorageLabel("服务器草稿");
+          const normalizedServerDraft = normalizeDraft(serverDraft);
+          setDraft((current) => reconcileServerDraft(current, normalizedServerDraft));
+        })
+        .catch(() => {
+          setStorageLabel("本地草稿");
+        });
+    }, 300);
+  }, [draft.info.submitterName]);
 
   useEffect(() => {
     const nextDraft = { ...draft, updatedAt: new Date().toISOString() };
@@ -52,7 +81,43 @@ function App() {
     } catch {
       setNotice("本地草稿空间不足。请先导出当前数据包，或删除部分照片后继续采集。");
     }
+
+    if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    const userName = getDraftUserName(nextDraft);
+    if (!userName) {
+      setStorageLabel("本地草稿");
+      return;
+    }
+
+    saveTimerRef.current = window.setTimeout(() => {
+      saveDraftToServer(nextDraft)
+        .then(() => setStorageLabel("服务器草稿"))
+        .catch(() => {
+          setStorageLabel("本地草稿");
+          setNotice("服务器自动保存失败，当前内容已保存在本地草稿。");
+        });
+    }, 800);
   }, [draft]);
+
+  function reconcileServerDraft(localDraft: typeof draft, serverDraft: typeof draft) {
+    if (draftHasContent(serverDraft)) return serverDraft;
+    return normalizeDraft({
+      ...localDraft,
+      id: serverDraft.id,
+      createdAt: serverDraft.createdAt || localDraft.createdAt,
+      info: {
+        ...localDraft.info,
+        submitterName: serverDraft.info.submitterName || localDraft.info.submitterName,
+      },
+    });
+  }
+
+  function draftHasContent(target: typeof draft) {
+    const hasInfo = Object.entries(target.info).some(
+      ([key, value]) => key !== "submitterName" && value.trim().length > 0,
+    );
+    return hasInfo || target.units.length > 0;
+  }
 
   function patchInfo(key: keyof SubmissionInfo, value: string) {
     setDraft((current) => ({
@@ -145,7 +210,7 @@ function App() {
     label: string,
   ) {
     if (!event.target.files?.length) return;
-    const assets = await filesToAssets(event.target.files, role, label);
+    const assets = await createAssetsFromFiles(event.target.files, role, label, unitId);
     setDraft((current) => ({
       ...current,
       units: current.units.map((unit) =>
@@ -162,9 +227,10 @@ function App() {
     unitId: string,
     itemId: string,
     label: string,
+    role: AssetRole = "photo",
   ) {
     if (!event.target.files?.length) return;
-    const assets = await filesToAssets(event.target.files, "photo", label);
+    const assets = await createAssetsFromFiles(event.target.files, role, label, unitId, itemId);
     setDraft((current) => ({
       ...current,
       units: current.units.map((unit) => {
@@ -180,7 +246,45 @@ function App() {
     event.target.value = "";
   }
 
+  async function createAssetsFromFiles(
+    files: FileList,
+    role: AssetRole,
+    label: string,
+    unitId: string,
+    itemId?: string,
+  ) {
+    const userName = getDraftUserName(draft);
+    if (!userName) return filesToAssets(files, role, label);
+
+    try {
+      const assets = await Promise.all(
+        Array.from(files).map((file) =>
+          uploadAssetToServer({
+            userName,
+            file,
+            role,
+            label,
+            unitId,
+            itemId,
+          }),
+        ),
+      );
+      setStorageLabel("服务器草稿");
+      return assets;
+    } catch {
+      setStorageLabel("本地草稿");
+      setNotice("媒体上传到服务器失败，已临时保存在本地草稿。");
+      return filesToAssets(files, role, label);
+    }
+  }
+
   function removeAsset(unitId: string, assetId: string, itemId?: string) {
+    const asset = findAsset(unitId, assetId, itemId);
+    if (asset) {
+      deleteAssetFromServer(draft, asset).catch(() => {
+        setNotice("服务器上的媒体文件删除失败，本地草稿已先移除。");
+      });
+    }
     setDraft((current) => ({
       ...current,
       units: current.units.map((unit) => {
@@ -203,6 +307,17 @@ function App() {
     }));
   }
 
+  function findAsset(unitId: string, assetId: string, itemId?: string): MediaAsset | null {
+    const unit = draft.units.find((candidate) => candidate.id === unitId);
+    if (!unit) return null;
+    if (!itemId) {
+      return unit.environmentAssets.find((asset) => asset.id === assetId) ?? null;
+    }
+    return unit.items
+      .find((item) => item.id === itemId)
+      ?.photos.find((asset) => asset.id === assetId) ?? null;
+  }
+
   function toggleTag(unitId: string, itemId: string, key: TagKey, value: string) {
     const item = draft.units
       .find((candidate) => candidate.id === unitId)
@@ -216,10 +331,7 @@ function App() {
   }
 
   function continueFromInfo() {
-    if (missingInfo.length > 0) {
-      setNotice(`请先补充：${missingInfo.join("、")}`);
-      return;
-    }
+    if (missingInfo.length > 0) return;
     setNotice("");
     setScreen("collect");
   }
@@ -240,7 +352,7 @@ function App() {
     const payload = {
       ...draft,
       exportedAt: new Date().toISOString(),
-      note: "媒体文件以内嵌方式保存在导出数据中，适合原型验证；正式版本建议上传到对象存储。",
+      note: "媒体文件优先保存在服务器 uploads 目录中，导出数据里记录媒体 URL；服务器不可用时，本地草稿可能保留 dataUrl 作为临时兜底。",
     };
     downloadTextFile(`${draft.id}-museum-viz-submission.json`, JSON.stringify(payload, null, 2));
   }
@@ -255,7 +367,14 @@ function App() {
     setNotice("已清空本地草稿。");
   }
 
-  function submitDraft() {
+  async function submitDraft() {
+    try {
+      await saveDraftToServer(draft);
+      await submitDraftToServer(draft);
+      setStorageLabel("服务器草稿");
+    } catch {
+      setNotice("提交保存到服务器失败，已保留本地草稿并导出数据包。");
+    }
     setScreen("success");
     exportDraft();
   }
@@ -270,12 +389,13 @@ function App() {
           </div>
           <div className="draft-pill">
             <Save size={16} />
-            <span>本地草稿</span>
+            <span>{storageLabel}</span>
           </div>
         </header>
 
         <StageNav
           screen={screen}
+          canCollect={missingInfo.length === 0}
           onHome={() => setScreen("intro")}
           onCollect={() => setScreen("collect")}
           onReview={() => setScreen("review")}
@@ -287,17 +407,7 @@ function App() {
 
         {screen === "intro" ? (
           <IntroScreen
-            hasBasicInfo={missingInfo.length === 0}
-            hasCollectionProgress={hasCollectionProgress}
-            onStart={() => setScreen("info")}
-            onContinue={() => setScreen(hasCollectionProgress ? "collect" : "info")}
-          />
-        ) : null}
-
-        {screen === "info" ? (
-          <InfoScreen
             draft={draft}
-            missingInfo={missingInfo}
             patchInfo={patchInfo}
             onContinue={continueFromInfo}
             onReset={resetDraft}
@@ -308,6 +418,7 @@ function App() {
           <CollectScreen
             draft={draft}
             stats={stats}
+            autoExpandUnitId={activeUnitId}
             onAddUnit={addUnit}
             onOpenUnit={openUnit}
             onAddItem={addItem}
@@ -334,8 +445,8 @@ function App() {
             onBack={() => setScreen("collect")}
             onPatchItem={(itemId, patch) => patchItem(activeUnit.id, itemId, patch)}
             onToggleTag={(itemId, key, value) => toggleTag(activeUnit.id, itemId, key, value)}
-            onAddItemFiles={(event, itemId, label) =>
-              addItemFiles(event, activeUnit.id, itemId, label)
+            onAddItemFiles={(event, itemId, label, role) =>
+              addItemFiles(event, activeUnit.id, itemId, label, role)
             }
             onRemoveItemAsset={(itemId, assetId) => removeAsset(activeUnit.id, assetId, itemId)}
           />

@@ -7,6 +7,7 @@ import type { Draft, Unit } from "../types";
 export function CollectScreen({
   draft,
   stats,
+  autoExpandUnitId,
   onAddUnit,
   onOpenUnit,
   onAddItem,
@@ -15,13 +16,14 @@ export function CollectScreen({
 }: {
   draft: Draft;
   stats: Stats;
+  autoExpandUnitId?: string | null;
   onAddUnit: () => void;
   onOpenUnit: (unitId: string) => void;
   onAddItem: (unitId: string) => void;
   onOpenItem: (unitId: string, itemId: string) => void;
   onRemoveItem: (unitId: string, itemId: string) => void;
 }) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(autoExpandUnitId ?? null);
   return (
     <section className="screen collect-screen">
       <button className="primary-button block" type="button" onClick={onAddUnit}>
@@ -61,8 +63,8 @@ export function CollectScreen({
       ) : (
         <EmptyState
           icon={<Layers size={34} />}
-          title="还没有展览单元"
-          text="点击上面的「添加展览单元」，把展览分成一个个单元来采集。"
+          title="无展览单元"
+          text=""
         />
       )}
     </section>
@@ -110,9 +112,7 @@ function UnitCard({
       </div>
       {expanded ? (
         <div className="unit-card-drawer">
-          {unit.items.length === 0 ? (
-            <p className="drawer-empty">这个单元还没有可视化项。</p>
-          ) : (
+          {unit.items.length > 0 ? (
             <ul className="viz-item-list">
               {unit.items.map((item) => (
                 <li key={item.id} className="viz-item">
@@ -136,7 +136,7 @@ function UnitCard({
                 </li>
               ))}
             </ul>
-          )}
+          ) : null}
           <button className="secondary-button block" type="button" onClick={onAddItem}>
             <Plus size={16} />
             添加可视化项

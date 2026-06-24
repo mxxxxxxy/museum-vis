@@ -171,6 +171,23 @@ button {
   gap: 12px;
 }
 
+.intro-panel.is-complete {
+  border-color: rgba(21, 128, 61, 0.4);
+  background: linear-gradient(180deg, rgba(21, 128, 61, 0.12), rgba(21, 128, 61, 0.03));
+}
+
+.intro-panel .intro-ready {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--success);
+  font-weight: 700;
+}
+
+.intro-panel .intro-ready svg {
+  flex: 0 0 auto;
+}
+
 .intro-panel h2 {
   max-width: 720px;
   font-size: clamp(23px, 6vw, 34px);
@@ -187,6 +204,93 @@ button {
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 4px;
+}
+
+.accordion {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.accordion.open {
+  border-color: rgba(15, 118, 110, 0.34);
+}
+
+.accordion-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 13px 16px;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.accordion-head-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.accordion-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(15, 118, 110, 0.12);
+  color: var(--brand);
+}
+
+.accordion-titles {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.accordion-titles strong {
+  font-size: 17px;
+  letter-spacing: 0;
+}
+
+.accordion-head-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.accordion-chevron {
+  color: var(--muted);
+  transition: transform 0.18s ease;
+}
+
+.accordion.open .accordion-chevron {
+  transform: rotate(180deg);
+  color: var(--brand);
+}
+
+.check-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: rgba(21, 128, 61, 0.14);
+  color: var(--success);
+}
+
+.accordion-body {
+  border-top: 1px solid var(--line);
+  padding: 16px;
 }
 
 .compact-note,
@@ -299,6 +403,25 @@ button {
 .field textarea:focus {
   border-color: var(--brand);
   box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+}
+
+.field-invalid input,
+.field-invalid select,
+.field-invalid textarea {
+  border-color: var(--danger);
+  background: rgba(185, 28, 28, 0.04);
+}
+
+.field-invalid input:focus,
+.field-invalid select:focus,
+.field-invalid textarea:focus {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.16);
+}
+
+.field-invalid b {
+  background: rgba(185, 28, 28, 0.12);
+  color: var(--danger);
 }
 
 .notice,
@@ -645,15 +768,21 @@ button {
   padding-top: 4px;
 }
 
-.item-name-row {
-  display: flex;
-  align-items: flex-end;
+.item-name-block {
+  display: grid;
   gap: 10px;
 }
 
-.item-name-field {
-  flex: 1 1 auto;
-  min-width: 0;
+.item-name-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* override the mobile full-width button rule so 确认 stays content-width beside 回退 */
+.item-name-bar .primary-button {
+  width: auto;
 }
 
 .media-grid {
@@ -949,14 +1078,23 @@ button {
   gap: 12px;
 }
 
-.hier-icon {
-  display: inline-grid;
-  place-items: center;
+.hier-row .hier-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40px;
   width: 40px;
   height: 40px;
+  margin-top: 0;
   border-radius: 10px;
   background: rgba(15, 118, 110, 0.12);
   color: var(--brand);
+  line-height: 0;
+}
+
+.hier-icon svg {
+  display: block;
+  flex: 0 0 auto;
 }
 
 .hier-row strong {
@@ -964,7 +1102,7 @@ button {
   font-size: 16px;
 }
 
-.hier-row span {
+.hier-row > div > span {
   display: block;
   margin-top: 3px;
   color: var(--muted);
@@ -1171,6 +1309,11 @@ button {
   border-color: rgba(15, 118, 110, 0.28);
   color: var(--brand);
   background: rgba(15, 118, 110, 0.1);
+}
+
+.stage-nav button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 @media (max-width: 720px) {
