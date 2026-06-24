@@ -1,5 +1,14 @@
-import { emptyInfo } from "../constants";
-import type { AssetRole, Draft, MediaAsset, SubmissionInfo, Unit, VizItem } from "../types";
+import { emptyInfo, itemDescriptionSections } from "../constants";
+import type {
+  AssetRole,
+  Draft,
+  MediaAsset,
+  SubmissionInfo,
+  Unit,
+  VizDescriptionKey,
+  VizItem,
+  VizItemDescription,
+} from "../types";
 import { uid } from "./id";
 
 export type Stats = { units: number; items: number; assets: number };
@@ -21,11 +30,39 @@ export function createItem(index: number): VizItem {
     serial: `${index}`,
     title: "",
     locationDescription: "",
-    description: "",
-    visualizationTypes: [],
-    mediaTypes: [],
+    description: createEmptyItemDescription(),
     photos: [],
   };
+}
+
+export function createEmptyItemDescription(): VizItemDescription {
+  return {
+    visualizationSelf: "",
+    exhibitionFunction: "",
+    humanInteraction: "",
+    evaluation: "",
+    additionalInfo: "",
+  };
+}
+
+function hasPhotoAsset(item: VizItem) {
+  return item.photos.some((asset) => asset.role === "photo" && asset.type.startsWith("image/"));
+}
+
+export function getItemMissingFields(item: VizItem): string[] {
+  const missing: string[] = [];
+  if (!item.title.trim()) missing.push("名称");
+  if (!hasPhotoAsset(item)) missing.push("现场照片");
+  itemDescriptionSections.forEach((section) => {
+    if (section.required && !item.description[section.key].trim()) {
+      missing.push(section.missingLabel);
+    }
+  });
+  return missing;
+}
+
+export function isItemComplete(item: VizItem) {
+  return getItemMissingFields(item).length === 0;
 }
 
 export function renumberItems(items: VizItem[] = []): VizItem[] {
@@ -50,15 +87,37 @@ function normalizeAsset(asset: Partial<MediaAsset> | undefined, fallbackRole: As
   };
 }
 
-function normalizeItem(item: Partial<VizItem> & { notes?: string }): VizItem {
+type LegacyVizItem = Partial<Omit<VizItem, "description">> & {
+  description?: string | Partial<Record<VizDescriptionKey, string>>;
+  notes?: string;
+};
+
+function normalizeItemDescription(
+  description: LegacyVizItem["description"],
+  notes?: string,
+): VizItemDescription {
+  if (description && typeof description === "object") {
+    return itemDescriptionSections.reduce((result, section) => {
+      const value = description[section.key];
+      result[section.key] = typeof value === "string" ? value : "";
+      return result;
+    }, createEmptyItemDescription());
+  }
+
+  const legacyText = typeof description === "string" ? description : notes ?? "";
+  return {
+    ...createEmptyItemDescription(),
+    visualizationSelf: legacyText,
+  };
+}
+
+function normalizeItem(item: LegacyVizItem): VizItem {
   return {
     id: item.id ?? uid("item"),
     serial: item.serial ?? "",
     title: item.title ?? "",
     locationDescription: item.locationDescription ?? "",
-    description: item.description ?? item.notes ?? "",
-    visualizationTypes: item.visualizationTypes ?? [],
-    mediaTypes: item.mediaTypes ?? [],
+    description: normalizeItemDescription(item.description, item.notes),
     photos: (item.photos ?? []).map((asset) => normalizeAsset(asset, "photo")),
   };
 }
@@ -93,6 +152,9 @@ export function normalizeDraft(draft: Partial<Draft>): Draft {
     createdAt: draft.createdAt ?? now,
     updatedAt: draft.updatedAt ?? now,
     info: { ...emptyInfo, ...(draft.info ?? {}) },
+    floorplanAssets: (draft.floorplanAssets ?? []).map((asset) =>
+      normalizeAsset(asset, "floorplan"),
+    ),
     units: normalizeUnits(draft.units ?? []),
   };
 }
@@ -112,6 +174,7 @@ export const VENUE_REQUIRED_FIELDS: Array<keyof SubmissionInfo> = [
   "museumName",
   "museumAddress",
   "exhibitionName",
+  "exhibitionPeriod",
 ];
 
 export function isInfoSectionComplete(
@@ -130,6 +193,7 @@ export function getRequiredInfoMissing(info: SubmissionInfo) {
     ["museumName", "博物馆名称"],
     ["museumAddress", "博物馆地址"],
     ["exhibitionName", "展览名称"],
+    ["exhibitionPeriod", "展览举办时间"],
   ];
   return fields.filter(([key]) => !info[key].trim()).map(([, label]) => label);
 }
@@ -145,6 +209,6 @@ export function countAssets(draft: Draft): Stats {
       });
       return acc;
     },
-    { units: 0, items: 0, assets: 0 },
+    { units: 0, items: 0, assets: draft.floorplanAssets.length },
   );
 }

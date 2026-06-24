@@ -7,9 +7,9 @@ export function SuccessScreen({ onBack, onExport }: { onBack: () => void; onExpo
         <div className="hero-icon">
           <Check size={32} />
         </div>
-        <h2>提交包已导出</h2>
+        <h2>提交完成</h2>
         <p>
-          当前原型会把结构化信息和照片一起导出。正式版可以把同一套结构接入后端对象存储，实现真正的上传。
+          数据已提交到服务器。本地备份可以单独导出，不会和提交操作自动绑定。
         </p>
         <div className="action-row center">
           <button className="secondary-button" type="button" onClick={onBack}>
@@ -17,7 +17,7 @@ export function SuccessScreen({ onBack, onExport }: { onBack: () => void; onExpo
           </button>
           <button className="primary-button" type="button" onClick={onExport}>
             <Download size={18} />
-            再次导出
+            导出数据包
           </button>
         </div>
       </div>

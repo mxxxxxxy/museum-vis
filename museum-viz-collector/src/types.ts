@@ -33,10 +33,23 @@ export type VizItem = {
   serial: string;
   title: string;
   locationDescription: string;
-  description: string;
-  visualizationTypes: string[];
-  mediaTypes: string[];
+  description: VizItemDescription;
   photos: MediaAsset[];
+};
+
+export type VizDescriptionKey =
+  | "visualizationSelf"
+  | "exhibitionFunction"
+  | "humanInteraction"
+  | "evaluation"
+  | "additionalInfo";
+
+export type VizItemDescription = {
+  visualizationSelf: string;
+  exhibitionFunction: string;
+  humanInteraction: string;
+  evaluation: string;
+  additionalInfo: string;
 };
 
 export type Unit = {
@@ -53,7 +66,6 @@ export type Draft = {
   createdAt: string;
   updatedAt: string;
   info: SubmissionInfo;
+  floorplanAssets: MediaAsset[];
   units: Unit[];
 };
-
-export type TagKey = "visualizationTypes" | "mediaTypes";

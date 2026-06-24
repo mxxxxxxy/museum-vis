@@ -93,6 +93,44 @@ export async function uploadAssetToServer({
   };
 }
 
+type TranscribeContext = {
+  userName?: string;
+  unitId?: string;
+  itemId?: string;
+  section?: string;
+};
+
+export async function transcribeAudio(
+  blob: Blob,
+  context: TranscribeContext = {},
+): Promise<string> {
+  const formData = new FormData();
+  formData.set("file", blob, `voice.${audioExtForType(blob.type)}`);
+  if (context.userName) formData.set("userName", context.userName);
+  if (context.unitId) formData.set("unitId", context.unitId);
+  if (context.itemId) formData.set("itemId", context.itemId);
+  if (context.section) formData.set("section", context.section);
+
+  const response = await fetch(apiPath(`${apiPrefix}/transcribe`), {
+    method: "POST",
+    body: formData,
+  });
+  const payload = await readJson(response);
+  if (!response.ok) {
+    throw new Error(payload.message || payload.error || "语音识别失败");
+  }
+  return (payload.text as string) || "";
+}
+
+function audioExtForType(mime: string) {
+  if (mime.includes("webm")) return "webm";
+  if (mime.includes("mp4") || mime.includes("m4a")) return "m4a";
+  if (mime.includes("ogg")) return "ogg";
+  if (mime.includes("wav")) return "wav";
+  if (mime.includes("mpeg")) return "mp3";
+  return "webm";
+}
+
 export async function deleteAssetFromServer(draft: Draft, asset: MediaAsset) {
   const userName = getDraftUserName(draft);
   if (!userName || !asset.url) return null;
@@ -109,6 +147,7 @@ export async function deleteAssetFromServer(draft: Draft, asset: MediaAsset) {
 function stripInlineMedia(draft: Draft): Draft {
   return {
     ...draft,
+    floorplanAssets: draft.floorplanAssets.map(stripAssetDataUrl),
     units: draft.units.map((unit) => ({
       ...unit,
       environmentAssets: unit.environmentAssets.map(stripAssetDataUrl),

@@ -1,33 +1,39 @@
-import { ArrowLeft, Camera, Check, FileImage, Mic } from "lucide-react";
+import { ArrowLeft, Check, FileImage, Trash2 } from "lucide-react";
 import type { ChangeEvent } from "react";
-import { ChoiceBlock } from "../components/ChoiceBlock";
+import { useState } from "react";
 import { EmptyState } from "../components/EmptyState";
-import { MediaGrid } from "../components/MediaGrid";
-import { MediaInputGroup } from "../components/MediaInput";
-import { TextField } from "../components/TextField";
-import { mediaTypeOptions, visualizationTypeOptions } from "../constants";
-import type { AssetRole, TagKey, Unit, VizItem } from "../types";
+import { PhotoAddControl } from "../components/PhotoAddControl";
+import { VoiceInputButton } from "../components/VoiceInputButton";
+import { itemDescriptionSections } from "../constants";
+import { getItemMissingFields } from "../lib/draft";
+import { formatBytes } from "../lib/media";
+import type { AssetRole, MediaAsset, Unit, VizItem } from "../types";
+
+const photoTypeOptions = ["周围环境", "完整视图", "关键细节", "其他"];
+const defaultPhotoType = "其他";
 
 export function ItemScreen({
   unit,
   activeItemId,
   onBack,
+  onConfirm,
   onPatchItem,
-  onToggleTag,
   onAddItemFiles,
+  onTranscribeItemAudio,
   onRemoveItemAsset,
 }: {
   unit: Unit;
   activeItemId: string | null;
   onBack: () => void;
+  onConfirm: () => void;
   onPatchItem: (itemId: string, patch: Partial<VizItem>) => void;
-  onToggleTag: (itemId: string, key: TagKey, value: string) => void;
   onAddItemFiles: (
     event: ChangeEvent<HTMLInputElement>,
     itemId: string,
     label: string,
     role?: AssetRole,
   ) => void;
+  onTranscribeItemAudio: (itemId: string, section: string, blob: Blob) => Promise<string>;
   onRemoveItemAsset: (itemId: string, assetId: string) => void;
 }) {
   const activeItem = unit.items.find((item) => item.id === activeItemId) ?? unit.items[0];
@@ -57,9 +63,12 @@ export function ItemScreen({
         <ItemEditor
           item={activeItem}
           onBack={onBack}
+          onConfirm={onConfirm}
           onPatch={(patch) => onPatchItem(activeItem.id, patch)}
-          onToggleTag={(key, value) => onToggleTag(activeItem.id, key, value)}
           onAddFiles={(event, label, role) => onAddItemFiles(event, activeItem.id, label, role)}
+          onTranscribeAudio={(section, blob) =>
+            onTranscribeItemAudio(activeItem.id, section, blob)
+          }
           onRemoveAsset={(assetId) => onRemoveItemAsset(activeItem.id, assetId)}
         />
       </div>
@@ -70,96 +79,225 @@ export function ItemScreen({
 function ItemEditor({
   item,
   onBack,
+  onConfirm,
   onPatch,
-  onToggleTag,
   onAddFiles,
+  onTranscribeAudio,
   onRemoveAsset,
 }: {
   item: VizItem;
   onBack: () => void;
+  onConfirm: () => void;
   onPatch: (patch: Partial<VizItem>) => void;
-  onToggleTag: (key: TagKey, value: string) => void;
   onAddFiles: (event: ChangeEvent<HTMLInputElement>, label: string, role?: AssetRole) => void;
+  onTranscribeAudio: (section: string, blob: Blob) => Promise<string>;
   onRemoveAsset: (assetId: string) => void;
 }) {
+  const [isAddingPhoto, setIsAddingPhoto] = useState(false);
+  const [didTryConfirm, setDidTryConfirm] = useState(false);
+  const missingFields = didTryConfirm ? getItemMissingFields(item) : [];
+  const titleInvalid = missingFields.includes("名称");
+  const photosInvalid = missingFields.includes("现场照片");
+
+  function handleConfirm() {
+    setDidTryConfirm(true);
+    onConfirm();
+  }
+
   return (
     <div className="item-editor">
       <div className="item-name-block">
         <div className="item-name-bar">
-          <button className="icon-button" type="button" onClick={onBack} aria-label="返回">
-            <ArrowLeft size={20} />
+          <button className="secondary-button small" type="button" onClick={onBack}>
+            <ArrowLeft size={16} /> 返回
           </button>
-          <button className="primary-button small" type="button" onClick={onBack}>
+          <button
+            className="primary-button small"
+            type="button"
+            onClick={handleConfirm}
+          >
             <Check size={16} /> 确认
           </button>
         </div>
-        <label className="field">
-          <span>名称</span>
-          <input
-            type="text"
-            value={item.title}
-            placeholder="例如：北大百年校史时间线"
-            onChange={(event) => onPatch({ title: event.target.value })}
-          />
-        </label>
+        <InlineTextField
+          label="名称"
+          value={item.title}
+          required
+          invalid={titleInvalid}
+          placeholder="例如：北大百年校史时间线"
+          onChange={(value) => onPatch({ title: value })}
+        />
       </div>
 
-      <TextField
+      <InlineTextField
         label="位置"
         value={item.locationDescription}
         placeholder="可选，如入口右侧墙面、展柜旁。"
         onChange={(value) => onPatch({ locationDescription: value })}
       />
 
-      <div className="field-block">
-        <div className="block-title">
-          <h4>现场照片</h4>
-          <p>建议拍三类：环境位置、正面完整、关键细节。</p>
-        </div>
-        <div className="upload-grid">
-          <MediaInputGroup
-            icon={<Camera size={18} />}
-            cameraLabel="拍照"
-            libraryLabel="从相册选"
-            onChange={(event) => onAddFiles(event, "现场照片")}
+      <div className={`field-block${photosInvalid ? " field-block-invalid" : ""}`}>
+        <div className="block-title photo-title-bar">
+          <h4>
+            现场照片
+            <span className="required-badge">必填</span>
+          </h4>
+          <PhotoAddControl
+            ariaLabel="添加现场照片"
+            isOpen={isAddingPhoto}
+            onToggle={() => setIsAddingPhoto((current) => !current)}
+            onAddFiles={(event) => {
+              onAddFiles(event, defaultPhotoType);
+              setIsAddingPhoto(false);
+            }}
           />
-          <label className="capture-button">
-            <Mic size={18} />
-            <span>上传录音</span>
-            <input
-              type="file"
-              accept="audio/*"
-              onChange={(event) => onAddFiles(event, "录音", "audio")}
-            />
-          </label>
         </div>
-        <MediaGrid assets={item.photos} onRemove={onRemoveAsset} />
+        <PhotoCaptureRows
+          assets={item.photos}
+          onRemoveAsset={onRemoveAsset}
+          onChangePhotoType={(assetId, label) =>
+            onPatch({
+              photos: item.photos.map((asset) =>
+                asset.id === assetId ? { ...asset, label } : asset,
+              ),
+            })
+          }
+        />
       </div>
 
-      <label className="field field-wide field-emphasis">
-        <span>
-          文字描述
-          <b>重点</b>
-        </span>
-        <textarea
-          value={item.description}
-          placeholder="写一段描述：它画了什么？有哪些主要部分？主要在讲什么信息？在展览里起什么作用？好不好懂？"
-          onChange={(event) => onPatch({ description: event.target.value })}
-        />
-      </label>
-
-      <ChoiceBlock
-        title="可视化类型"
-        values={item.visualizationTypes}
-        options={visualizationTypeOptions}
-        onToggle={(value) => onToggleTag("visualizationTypes", value)}
-      />
-      <ChoiceBlock
-        title="展陈媒介"
-        values={item.mediaTypes}
-        options={mediaTypeOptions}
-        onToggle={(value) => onToggleTag("mediaTypes", value)}
-      />
+      <div className="description-sections">
+        <div className="description-section-grid">
+          {itemDescriptionSections.map((section) => (
+            <div
+              className={`field field-wide description-section${
+                missingFields.includes(section.missingLabel) ? " field-invalid" : ""
+              }`}
+              key={section.key}
+            >
+              <span>
+                <span className="description-section-title">
+                  {section.title}
+                  {section.required ? <b>必填</b> : null}
+                </span>
+                <VoiceInputButton
+                  onText={(text) =>
+                    onPatch({
+                      description: {
+                        ...item.description,
+                        [section.key]: joinTranscript(item.description[section.key], text),
+                      },
+                    })
+                  }
+                  onTranscribe={(blob) => onTranscribeAudio(section.key, blob)}
+                />
+              </span>
+              <p className="field-helper">{section.helper}</p>
+              <textarea
+                value={item.description[section.key]}
+                placeholder={section.placeholder}
+                onChange={(event) =>
+                  onPatch({
+                    description: {
+                      ...item.description,
+                      [section.key]: event.target.value,
+                    },
+                  })
+                }
+              />
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
+}
+
+function InlineTextField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  required,
+  invalid = false,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  required?: boolean;
+  invalid?: boolean;
+}) {
+  return (
+    <label className={`inline-field${invalid ? " inline-field-invalid" : ""}`}>
+      <span className="inline-field-label">{label}</span>
+      <input
+        type="text"
+        value={value}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      {required ? <b className="inline-field-required">必填</b> : null}
+    </label>
+  );
+}
+
+function PhotoCaptureRows({
+  assets,
+  onRemoveAsset,
+  onChangePhotoType,
+}: {
+  assets: MediaAsset[];
+  onRemoveAsset: (assetId: string) => void;
+  onChangePhotoType: (assetId: string, label: string) => void;
+}) {
+  const imageAssets = assets.filter(isImagePhotoAsset);
+  if (!imageAssets.length) return null;
+
+  return (
+    <div className="photo-upload-panel">
+      <div className="photo-gallery">
+        {imageAssets.map((asset) => {
+          const src = asset.url || asset.dataUrl || "";
+          const photoType = photoTypeOptions.includes(asset.label)
+            ? asset.label
+            : defaultPhotoType;
+          return (
+            <div className="photo-card" key={asset.id}>
+              <img src={src} alt={photoType} />
+              <span className="photo-card-size">{formatBytes(asset.size)}</span>
+              <button
+                className="photo-card-remove"
+                type="button"
+                onClick={() => onRemoveAsset(asset.id)}
+                aria-label="删除照片"
+              >
+                <Trash2 size={14} />
+              </button>
+              <select
+                aria-label="选择图片类型"
+                value={photoType}
+                onChange={(event) => onChangePhotoType(asset.id, event.target.value)}
+              >
+                {photoTypeOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function joinTranscript(existing: string, addition: string) {
+  const base = existing.trimEnd();
+  if (!base) return addition;
+  return /[，。！？、；：,.!?;:]$/.test(base) ? `${base}${addition}` : `${base} ${addition}`;
+}
+
+function isImagePhotoAsset(asset: MediaAsset) {
+  return asset.role === "photo" && asset.type.startsWith("image/");
 }

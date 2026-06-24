@@ -5,6 +5,7 @@ export function TextField({
   type = "text",
   placeholder,
   required,
+  invalid = false,
   className,
 }: {
   label: string;
@@ -13,9 +14,9 @@ export function TextField({
   type?: string;
   placeholder?: string;
   required?: boolean;
+  invalid?: boolean;
   className?: string;
 }) {
-  const invalid = Boolean(required) && value.trim().length === 0;
   return (
     <label
       className={`field${invalid ? " field-invalid" : ""}${className ? ` ${className}` : ""}`}

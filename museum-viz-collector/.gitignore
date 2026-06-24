@@ -1,1 +1,4 @@
 .vercel
+
+# 后端密钥，不要提交
+server/.env

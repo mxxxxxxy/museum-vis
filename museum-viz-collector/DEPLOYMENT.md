@@ -29,20 +29,23 @@
 data/
 ├── submissions/
 │   └── user_xxxxxxxxxxxx/
-│       └── draft.json
+│       ├── draft.json
+│       └── voice_recordings.jsonl   # 语音输入的后台日志（不在前端显示）
 └── uploads/
     └── user_xxxxxxxxxxxx/
         ├── environment/
         ├── photos/
-        └── audio/
+        └── audio/                   # 语音输入的原始录音也存在这里
 ```
+
+> 用户点「🎤 语音」时，原始录音会存进 `uploads/<user>/audio/`，同时在 `submissions/<user>/voice_recordings.jsonl` 追加一条记录（每行一条 JSON）：录音时间 `createdAt`（按先后顺序）、所属分段 `section`/`sectionLabel`、`unitId`/`itemId`、以及识别出的 `text`。这些只在后台保存，前端不展示。以后想换方案（如本地 Whisper）批量重转时，audio 目录里的原始录音就是数据源。
 
 ## 推送代码
 
 在本机项目目录执行：
 
 ```bash
-DEPLOY_HOST=你的服务器IP \
+DEPLOY_HOST=49.233.250.13 \
 DEPLOY_USER=root \
 DEPLOY_PATH=/opt/museum-viz-collector \
 STATIC_WEB_ROOT=/usr/share/nginx/html/collection \
@@ -73,6 +76,36 @@ python server/python_server.py
 ```bash
 curl http://127.0.0.1:8787/exhibition_api/health
 ```
+
+## 语音转写（腾讯云一句话识别）
+
+描述框里的「🎤 语音」按钮会把录音发到 `/exhibition_api/transcribe`，后端调腾讯云一句话识别（SentenceRecognition）转成文字。要让它工作，服务器上需要：
+
+1. **装 ffmpeg**（把手机录的 webm/m4a 统一转成 16k 单声道 wav，识别最稳）：
+
+   ```bash
+   conda install -c conda-forge ffmpeg   # 或 apt install ffmpeg
+   ```
+
+2. **配置密钥**（环境变量，不要写进代码）。去[腾讯云访问管理](https://console.cloud.tencent.com/cam/capi)拿 SecretId / SecretKey，并在控制台开通「一句话识别」服务：
+
+   ```bash
+   cd /opt/museum-viz-collector
+   pkill -f server/python_server.py
+   TENCENT_SECRET_ID=你的SecretId \
+   TENCENT_SECRET_KEY=你的SecretKey \
+   nohup python server/python_server.py > python-server.log 2>&1 &
+   ```
+
+   可选环境变量：`TENCENT_ASR_REGION`（默认 `ap-guangzhou`）、`TENCENT_ASR_ENGINE`（默认 `16k_zh` 中文普通话）。
+
+### 额度自动兜底
+
+默认用「一句话识别」（同步、快、5000 次/月免费）。当它返回 `FailedOperation.UserHasNoFreeAmount` 或 `FailedOperation.UserHasNoAmount`（免费额度/资源包用尽）时，后端会**自动切换到「录音文件识别」**（异步、慢几秒，有独立的 10 小时/月免费额度），所以也要在控制台一并开通「录音文件识别」。`voice_recordings.jsonl` 里的 `engine` 字段会标明每条用的是 `sentence` 还是 `file`。
+
+想**演示/测试**这个切换而不真的耗尽额度：启动时加 `TENCENT_ASR_SIMULATE_NO_QUOTA=1`，它会假装一句话识别额度用尽、强制走录音文件识别。验证完去掉这个变量即可。
+
+排查：`transcribe` 返回 `Not Found`(404) = 新后端没部署；返回 `服务器未配置腾讯云语音识别密钥`(503) = 没设密钥；返回文字 = 成功。
 
 ## Nginx 配置
 

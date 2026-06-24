@@ -7,13 +7,15 @@ export function ScreenTop({
 }: {
   title: string;
   subtitle?: string;
-  onBack: () => void;
+  onBack?: () => void;
 }) {
   return (
     <div className="screen-top">
-      <button className="icon-button" type="button" onClick={onBack} aria-label="返回">
-        <ArrowLeft size={20} />
-      </button>
+      {onBack ? (
+        <button className="icon-button" type="button" onClick={onBack} aria-label="返回">
+          <ArrowLeft size={20} />
+        </button>
+      ) : null}
       <div>
         <h2>{title}</h2>
         {subtitle ? <p>{subtitle}</p> : null}

@@ -5,11 +5,12 @@ import {
   ChevronRight,
   FileImage,
   Layers,
-  Trash2,
   User,
 } from "lucide-react";
+import type { ChangeEvent } from "react";
 import { useState } from "react";
-import { TextField } from "../components/TextField";
+import { MediaGrid } from "../components/MediaGrid";
+import { PhotoAddControl } from "../components/PhotoAddControl";
 import {
   COLLECTOR_REQUIRED_FIELDS,
   VENUE_REQUIRED_FIELDS,
@@ -20,13 +21,15 @@ import type { Draft, SubmissionInfo } from "../types";
 export function IntroScreen({
   draft,
   patchInfo,
+  onAddFloorplanFiles,
+  onRemoveFloorplanAsset,
   onContinue,
-  onReset,
 }: {
   draft: Draft;
   patchInfo: (key: keyof SubmissionInfo, value: string) => void;
+  onAddFloorplanFiles: (event: ChangeEvent<HTMLInputElement>) => void;
+  onRemoveFloorplanAsset: (assetId: string) => void;
   onContinue: () => void;
-  onReset: () => void;
 }) {
   const collectorComplete = isInfoSectionComplete(draft.info, COLLECTOR_REQUIRED_FIELDS);
   const venueComplete = isInfoSectionComplete(draft.info, VENUE_REQUIRED_FIELDS);
@@ -34,33 +37,20 @@ export function IntroScreen({
 
   const [collectorOpen, setCollectorOpen] = useState(!collectorComplete);
   const [venueOpen, setVenueOpen] = useState(!venueComplete);
+  const [isAddingFloorplan, setIsAddingFloorplan] = useState(false);
 
   return (
     <section className="screen intro-screen">
-      <div className={`intro-panel${allComplete ? " is-complete" : ""}`}>
-        <h2>记录博物馆里的可视化，以及它所在的展陈环境</h2>
-        {allComplete ? (
-          <p className="intro-ready">
-            <Check size={18} />
-            基础信息已填完，现在可以进入「数据收集」。
-          </p>
-        ) : (
-          <p>
-            先在下面填好这次调研的基础信息（只填一次），再进入采集，按「展览 → 展览单元 → 可视化项」三层把现场可视化记录下来。
-          </p>
-        )}
-      </div>
-
       <div className="panel">
-        <p className="eyebrow structure-title">我们的采集数据组织结构</p>
+        <p className="eyebrow structure-title">调研数据组织</p>
         <div className="hierarchy">
           <div className="hier-row">
             <span className="hier-icon">
               <Building2 size={20} />
             </span>
             <div>
-              <strong>展览 / 博物馆</strong>
-              <span>填一次基础信息：收集人 + 博物馆 + 展览。</span>
+              <strong>博物馆展览</strong>
+              <span>收集人, 博物馆, 展览信息</span>
             </div>
           </div>
           <div className="hier-line" />
@@ -70,7 +60,7 @@ export function IntroScreen({
             </span>
             <div>
               <strong>展览单元</strong>
-              <span>把展览分成一个个单元，记录每个单元的空间环境。</span>
+              <span>展厅单元, 单元描述, 环境照片</span>
             </div>
           </div>
           <div className="hier-line" />
@@ -79,8 +69,8 @@ export function IntroScreen({
               <FileImage size={20} />
             </span>
             <div>
-              <strong>可视化项</strong>
-              <span>每项拍现场照片 + 写一段文字描述 + 选可视化类型。</span>
+              <strong>展陈可视化</strong>
+              <span>可视化项, 现场照片, 文字描述</span>
             </div>
           </div>
         </div>
@@ -113,22 +103,22 @@ export function IntroScreen({
         {collectorOpen ? (
           <div className="accordion-body">
             <div className="form-grid">
-              <TextField
-                label="收集人姓名"
+              <InlineTextField
+                label="姓名"
                 value={draft.info.submitterName}
                 required
                 onChange={(value) => patchInfo("submitterName", value)}
               />
-              <TextField
-                label="收集人单位"
+              <InlineTextField
+                label="单位"
                 value={draft.info.submitterOrg}
                 required
                 onChange={(value) => patchInfo("submitterOrg", value)}
               />
-              <TextField
+              <InlineTextField
                 label="联系方式"
                 value={draft.info.submitterContact}
-                placeholder="可选，邮箱或手机号，便于回访"
+                placeholder="邮箱或手机号"
                 className="field-wide"
                 onChange={(value) => patchInfo("submitterContact", value)}
               />
@@ -163,46 +153,46 @@ export function IntroScreen({
         </button>
         {venueOpen ? (
           <div className="accordion-body">
-            <div className="form-grid">
-              <TextField
+            <div className="form-grid venue-form-grid">
+              <InlineTextField
                 label="调研时间"
                 type="date"
                 value={draft.info.visitDate}
                 required
-                className="field-date"
                 onChange={(value) => patchInfo("visitDate", value)}
               />
-              <TextField
+              <InlineTextField
                 label="所在城市"
                 value={draft.info.city}
                 required
                 onChange={(value) => patchInfo("city", value)}
               />
-              <TextField
+              <InlineTextField
                 label="博物馆名称"
                 value={draft.info.museumName}
                 required
                 onChange={(value) => patchInfo("museumName", value)}
               />
-              <TextField
+              <InlineTextField
                 label="博物馆地址"
                 value={draft.info.museumAddress}
                 required
                 onChange={(value) => patchInfo("museumAddress", value)}
               />
-              <TextField
+              <InlineTextField
                 label="展览名称"
                 value={draft.info.exhibitionName}
                 required
                 onChange={(value) => patchInfo("exhibitionName", value)}
               />
-              <TextField
+              <InlineTextField
                 label="展览举办时间"
                 value={draft.info.exhibitionPeriod}
+                required
                 placeholder="如 2024.09 — 2025.03 或 常设展"
                 onChange={(value) => patchInfo("exhibitionPeriod", value)}
               />
-              <TextField
+              <InlineTextField
                 label="展览在线链接"
                 value={draft.info.exhibitionLink}
                 placeholder="如有官网、公众号或购票页"
@@ -217,16 +207,30 @@ export function IntroScreen({
                   onChange={(event) => patchInfo("exhibitionIntro", event.target.value)}
                 />
               </label>
+              <div className="field-block field-wide">
+                <div className="block-title photo-title-bar">
+                  <h4>展览平面图</h4>
+                  <PhotoAddControl
+                    ariaLabel="添加展览平面图"
+                    isOpen={isAddingFloorplan}
+                    onToggle={() => setIsAddingFloorplan((current) => !current)}
+                    onAddFiles={(event) => {
+                      onAddFloorplanFiles(event);
+                      setIsAddingFloorplan(false);
+                    }}
+                  />
+                </div>
+                <p className="field-helper">
+                  若博物馆展览提供，强烈建议将展陈平面图、导览图等内容采集。
+                </p>
+                <MediaGrid assets={draft.floorplanAssets} onRemove={onRemoveFloorplanAsset} />
+              </div>
             </div>
           </div>
         ) : null}
       </div>
 
       <div className="action-row">
-        <button className="secondary-button" type="button" onClick={onReset}>
-          <Trash2 size={18} />
-          清空草稿
-        </button>
         <button
           className="primary-button"
           type="button"
@@ -238,5 +242,36 @@ export function IntroScreen({
         </button>
       </div>
     </section>
+  );
+}
+
+function InlineTextField({
+  label,
+  value,
+  onChange,
+  type = "text",
+  placeholder,
+  required,
+  className,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: string;
+  placeholder?: string;
+  required?: boolean;
+  className?: string;
+}) {
+  return (
+    <label className={`inline-field${className ? ` ${className}` : ""}`}>
+      <span className="inline-field-label">{label}</span>
+      <input
+        type={type}
+        value={value}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      {required ? <b className="inline-field-required">必填</b> : null}
+    </label>
   );
 }

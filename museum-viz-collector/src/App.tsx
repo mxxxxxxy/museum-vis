@@ -1,4 +1,3 @@
-import { Save } from "lucide-react";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { StageNav } from "./components/StageNav";
 import { STORAGE_KEY } from "./constants";
@@ -7,6 +6,7 @@ import {
   createDraft,
   createItem,
   createUnit,
+  getItemMissingFields,
   getRequiredInfoMissing,
   normalizeDraft,
   normalizeUnits,
@@ -19,15 +19,16 @@ import {
   openServerSession,
   saveDraftToServer,
   submitDraftToServer,
+  transcribeAudio,
   uploadAssetToServer,
 } from "./lib/serverStorage";
 import { CollectScreen } from "./screens/CollectScreen";
 import { IntroScreen } from "./screens/IntroScreen";
 import { ItemScreen } from "./screens/ItemScreen";
-import { ReviewScreen } from "./screens/ReviewScreen";
+import { ReviewScreen, type ReviewTarget } from "./screens/ReviewScreen";
 import { SuccessScreen } from "./screens/SuccessScreen";
 import { UnitScreen } from "./screens/UnitScreen";
-import type { AssetRole, MediaAsset, Screen, SubmissionInfo, TagKey, Unit, VizItem } from "./types";
+import type { AssetRole, MediaAsset, Screen, SubmissionInfo, Unit, VizItem } from "./types";
 
 function App() {
   const [draft, setDraft] = useState(() => {
@@ -41,15 +42,22 @@ function App() {
   const [screen, setScreen] = useState<Screen>("intro");
   const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
+  const [pendingUnit, setPendingUnit] = useState<Unit | null>(null);
+  const [pendingItem, setPendingItem] = useState<{ unitId: string; item: VizItem } | null>(null);
   const [notice, setNotice] = useState("");
-  const [storageLabel, setStorageLabel] = useState("本地草稿");
+  const [, setStorageLabel] = useState("本地草稿");
   const sessionTimerRef = useRef<number | null>(null);
   const serverSessionUserRef = useRef("");
   const saveTimerRef = useRef<number | null>(null);
 
   const activeUnit = useMemo(
-    () => draft.units.find((unit) => unit.id === activeUnitId) ?? null,
-    [draft.units, activeUnitId],
+    () => {
+      if (pendingUnit?.id === activeUnitId) return pendingUnit;
+      const unit = draft.units.find((candidate) => candidate.id === activeUnitId) ?? null;
+      if (!unit || pendingItem?.unitId !== unit.id) return unit;
+      return { ...unit, items: [...unit.items, pendingItem.item] };
+    },
+    [draft.units, activeUnitId, pendingItem, pendingUnit],
   );
 
   const stats = countAssets(draft);
@@ -116,7 +124,7 @@ function App() {
     const hasInfo = Object.entries(target.info).some(
       ([key, value]) => key !== "submitterName" && value.trim().length > 0,
     );
-    return hasInfo || target.units.length > 0;
+    return hasInfo || target.floorplanAssets.length > 0 || target.units.length > 0;
   }
 
   function patchInfo(key: keyof SubmissionInfo, value: string) {
@@ -126,25 +134,94 @@ function App() {
     }));
   }
 
-  function addUnit() {
-    const unit = createUnit(draft.units.length + 1);
+  async function addFloorplanFiles(event: ChangeEvent<HTMLInputElement>) {
+    if (!event.target.files?.length) return;
+    const assets = await createAssetsFromFiles(event.target.files, "floorplan", "展览平面图");
     setDraft((current) => ({
       ...current,
-      units: normalizeUnits([...current.units, unit]),
+      floorplanAssets: [...current.floorplanAssets, ...assets],
     }));
+    event.target.value = "";
+  }
+
+  function removeFloorplanAsset(assetId: string) {
+    const asset = draft.floorplanAssets.find((candidate) => candidate.id === assetId);
+    if (asset) {
+      deleteAssetFromServer(draft, asset).catch(() => {
+        setNotice("服务器上的展览平面图删除失败，本地草稿已先移除。");
+      });
+    }
+    setDraft((current) => ({
+      ...current,
+      floorplanAssets: current.floorplanAssets.filter((candidate) => candidate.id !== assetId),
+    }));
+  }
+
+  function addUnit() {
+    const unit = createUnit(draft.units.length + 1);
+    setPendingUnit(unit);
     setActiveUnitId(unit.id);
     setActiveItemId(null);
     setScreen("unit");
   }
 
   function patchUnit(unitId: string, patch: Partial<Unit>) {
+    if (pendingUnit?.id === unitId) {
+      setPendingUnit((current) => (current?.id === unitId ? { ...current, ...patch } : current));
+      return;
+    }
+
     setDraft((current) => ({
       ...current,
       units: current.units.map((unit) => (unit.id === unitId ? { ...unit, ...patch } : unit)),
     }));
   }
 
+  function confirmUnit() {
+    if (!activeUnit || !activeUnit.name.trim() || !activeUnit.description.trim()) {
+      setNotice("");
+      return;
+    }
+
+    if (pendingUnit?.id === activeUnit.id) {
+      setDraft((current) => ({
+        ...current,
+        units: normalizeUnits([...current.units, activeUnit]),
+      }));
+      setPendingUnit(null);
+      setActiveUnitId(activeUnit.id);
+    }
+
+    setNotice("");
+    setScreen("collect");
+  }
+
+  function returnFromUnit() {
+    if (pendingUnit?.id === activeUnitId) {
+      discardPendingUnit();
+      setActiveUnitId(null);
+      setActiveItemId(null);
+    }
+    setNotice("");
+    setScreen("collect");
+  }
+
+  function discardPendingUnit() {
+    if (!pendingUnit) return;
+    pendingUnit.environmentAssets.forEach((asset) => {
+      deleteAssetFromServer(draft, asset).catch(() => {
+        setNotice("服务器上的临时环境照片删除失败，本地草稿已先取消这个展览单元。");
+      });
+    });
+    setPendingUnit(null);
+  }
+
   function removeUnit(unitId: string) {
+    if (pendingUnit?.id === unitId) {
+      returnFromUnit();
+      return;
+    }
+
     const confirmed = window.confirm("确定删除这个展览单元吗？单元内的可视化项也会一并删除。");
     if (!confirmed) return;
     setDraft((current) => {
@@ -160,20 +237,22 @@ function App() {
     const unit = draft.units.find((candidate) => candidate.id === unitId);
     if (!unit) return;
     const item = createItem(unit.items.length + 1);
-    setDraft((current) => ({
-      ...current,
-      units: current.units.map((candidate) =>
-        candidate.id === unitId
-          ? { ...candidate, items: [...candidate.items, item] }
-          : candidate,
-      ),
-    }));
+    setPendingItem({ unitId, item });
     setActiveUnitId(unitId);
     setActiveItemId(item.id);
     setScreen("item");
   }
 
   function patchItem(unitId: string, itemId: string, patch: Partial<VizItem>) {
+    if (pendingItem?.unitId === unitId && pendingItem.item.id === itemId) {
+      setPendingItem((current) =>
+        current?.unitId === unitId && current.item.id === itemId
+          ? { ...current, item: { ...current.item, ...patch } }
+          : current,
+      );
+      return;
+    }
+
     setDraft((current) => ({
       ...current,
       units: current.units.map((unit) => {
@@ -203,6 +282,51 @@ function App() {
     if (activeItemId === itemId) setActiveItemId(null);
   }
 
+  function confirmItem() {
+    const item = findItem(activeUnitId, activeItemId);
+    if (!item || !activeUnitId || !activeItemId) return;
+
+    const missingFields = getItemMissingFields(item);
+    if (missingFields.length > 0) {
+      setNotice("");
+      return;
+    }
+
+    if (pendingItem?.unitId === activeUnitId && pendingItem.item.id === activeItemId) {
+      setDraft((current) => ({
+        ...current,
+        units: current.units.map((unit) =>
+          unit.id === activeUnitId
+            ? { ...unit, items: renumberItems([...unit.items, item]) }
+            : unit,
+        ),
+      }));
+      setPendingItem(null);
+    }
+
+    setNotice("");
+    setScreen("collect");
+  }
+
+  function discardPendingItem() {
+    if (!pendingItem) return;
+    pendingItem.item.photos.forEach((asset) => {
+      deleteAssetFromServer(draft, asset).catch(() => {
+        setNotice("服务器上的临时媒体文件删除失败，本地草稿已先取消这个可视化项。");
+      });
+    });
+    setPendingItem(null);
+  }
+
+  function returnFromItem() {
+    if (pendingItem?.unitId === activeUnitId && pendingItem.item.id === activeItemId) {
+      discardPendingItem();
+      setActiveItemId(null);
+    }
+    setNotice("");
+    setScreen("collect");
+  }
+
   async function addUnitFiles(
     event: ChangeEvent<HTMLInputElement>,
     unitId: string,
@@ -211,6 +335,16 @@ function App() {
   ) {
     if (!event.target.files?.length) return;
     const assets = await createAssetsFromFiles(event.target.files, role, label, unitId);
+    if (pendingUnit?.id === unitId) {
+      setPendingUnit((current) =>
+        current?.id === unitId
+          ? { ...current, environmentAssets: [...current.environmentAssets, ...assets] }
+          : current,
+      );
+      event.target.value = "";
+      return;
+    }
+
     setDraft((current) => ({
       ...current,
       units: current.units.map((unit) =>
@@ -231,6 +365,34 @@ function App() {
   ) {
     if (!event.target.files?.length) return;
     const assets = await createAssetsFromFiles(event.target.files, role, label, unitId, itemId);
+    appendItemPhotos(unitId, itemId, assets);
+    event.target.value = "";
+  }
+
+  async function transcribeItemAudio(
+    unitId: string,
+    itemId: string,
+    section: string,
+    blob: Blob,
+  ) {
+    return transcribeAudio(blob, {
+      userName: getDraftUserName(draft),
+      unitId,
+      itemId,
+      section,
+    });
+  }
+
+  function appendItemPhotos(unitId: string, itemId: string, assets: MediaAsset[]) {
+    if (pendingItem?.unitId === unitId && pendingItem.item.id === itemId) {
+      setPendingItem((current) =>
+        current?.unitId === unitId && current.item.id === itemId
+          ? { ...current, item: { ...current.item, photos: [...current.item.photos, ...assets] } }
+          : current,
+      );
+      return;
+    }
+
     setDraft((current) => ({
       ...current,
       units: current.units.map((unit) => {
@@ -243,14 +405,13 @@ function App() {
         };
       }),
     }));
-    event.target.value = "";
   }
 
   async function createAssetsFromFiles(
-    files: FileList,
+    files: FileList | File[],
     role: AssetRole,
     label: string,
-    unitId: string,
+    unitId?: string,
     itemId?: string,
   ) {
     const userName = getDraftUserName(draft);
@@ -285,6 +446,35 @@ function App() {
         setNotice("服务器上的媒体文件删除失败，本地草稿已先移除。");
       });
     }
+    if (!itemId && pendingUnit?.id === unitId) {
+      setPendingUnit((current) =>
+        current?.id === unitId
+          ? {
+              ...current,
+              environmentAssets: current.environmentAssets.filter(
+                (candidate) => candidate.id !== assetId,
+              ),
+            }
+          : current,
+      );
+      return;
+    }
+
+    if (pendingItem?.unitId === unitId && pendingItem.item.id === itemId) {
+      setPendingItem((current) =>
+        current?.unitId === unitId && current.item.id === itemId
+          ? {
+              ...current,
+              item: {
+                ...current.item,
+                photos: current.item.photos.filter((candidate) => candidate.id !== assetId),
+              },
+            }
+          : current,
+      );
+      return;
+    }
+
     setDraft((current) => ({
       ...current,
       units: current.units.map((unit) => {
@@ -308,6 +498,14 @@ function App() {
   }
 
   function findAsset(unitId: string, assetId: string, itemId?: string): MediaAsset | null {
+    if (!itemId && pendingUnit?.id === unitId) {
+      return pendingUnit.environmentAssets.find((asset) => asset.id === assetId) ?? null;
+    }
+
+    if (pendingItem?.unitId === unitId && pendingItem.item.id === itemId) {
+      return pendingItem.item.photos.find((asset) => asset.id === assetId) ?? null;
+    }
+
     const unit = draft.units.find((candidate) => candidate.id === unitId);
     if (!unit) return null;
     if (!itemId) {
@@ -318,16 +516,16 @@ function App() {
       ?.photos.find((asset) => asset.id === assetId) ?? null;
   }
 
-  function toggleTag(unitId: string, itemId: string, key: TagKey, value: string) {
-    const item = draft.units
-      .find((candidate) => candidate.id === unitId)
-      ?.items.find((candidate) => candidate.id === itemId);
-    if (!item) return;
-    const values = item[key];
-    const nextValues = values.includes(value)
-      ? values.filter((candidate) => candidate !== value)
-      : [...values, value];
-    patchItem(unitId, itemId, { [key]: nextValues } as Partial<VizItem>);
+  function findItem(unitId: string | null, itemId: string | null): VizItem | null {
+    if (!unitId || !itemId) return null;
+    if (pendingItem?.unitId === unitId && pendingItem.item.id === itemId) {
+      return pendingItem.item;
+    }
+    return (
+      draft.units
+        .find((candidate) => candidate.id === unitId)
+        ?.items.find((candidate) => candidate.id === itemId) ?? null
+    );
   }
 
   function continueFromInfo() {
@@ -337,12 +535,15 @@ function App() {
   }
 
   function openUnit(unitId: string) {
+    discardPendingUnit();
+    discardPendingItem();
     setActiveUnitId(unitId);
     setActiveItemId(null);
     setScreen("unit");
   }
 
   function openItem(unitId: string, itemId: string) {
+    discardPendingItem();
     setActiveUnitId(unitId);
     setActiveItemId(itemId);
     setScreen("item");
@@ -357,14 +558,44 @@ function App() {
     downloadTextFile(`${draft.id}-museum-viz-submission.json`, JSON.stringify(payload, null, 2));
   }
 
-  function resetDraft() {
-    const confirmed = window.confirm("确定清空当前本地草稿吗？这个操作无法恢复。");
-    if (!confirmed) return;
-    setDraft(createDraft());
-    setScreen("intro");
-    setActiveUnitId(null);
-    setActiveItemId(null);
-    setNotice("已清空本地草稿。");
+  function navigateFromTop(nextScreen: Screen) {
+    if (pendingUnit?.id === activeUnitId) {
+      discardPendingUnit();
+      setActiveUnitId(null);
+      setActiveItemId(null);
+    }
+    if (pendingItem?.unitId === activeUnitId && pendingItem.item.id === activeItemId) {
+      discardPendingItem();
+      setActiveItemId(null);
+    }
+    setScreen(nextScreen);
+  }
+
+  function collectFromTop() {
+    if (missingInfo.length > 0) return;
+    navigateFromTop("collect");
+  }
+
+  function reviewFromTop() {
+    navigateFromTop("review");
+  }
+
+  function jumpToReviewTarget(target: ReviewTarget) {
+    switch (target.type) {
+      case "info":
+        navigateFromTop("intro");
+        break;
+      case "collect":
+        if (target.unitId) setActiveUnitId(target.unitId);
+        navigateFromTop("collect");
+        break;
+      case "unit":
+        openUnit(target.unitId);
+        break;
+      case "item":
+        openItem(target.unitId, target.itemId);
+        break;
+    }
   }
 
   async function submitDraft() {
@@ -372,33 +603,26 @@ function App() {
       await saveDraftToServer(draft);
       await submitDraftToServer(draft);
       setStorageLabel("服务器草稿");
+      setNotice("");
+      setScreen("success");
     } catch {
-      setNotice("提交保存到服务器失败，已保留本地草稿并导出数据包。");
+      setNotice("提交保存到服务器失败，当前内容已保存在本地草稿；如需本地备份，可以单独导出数据包。");
     }
-    setScreen("success");
-    exportDraft();
   }
 
   return (
     <div className="app-shell">
       <div className="top-stack">
         <header className="app-header">
-          <div>
-            <p className="eyebrow">博物馆展陈可视化调查</p>
-            <h1>博物馆可视化采集</h1>
-          </div>
-          <div className="draft-pill">
-            <Save size={16} />
-            <span>{storageLabel}</span>
-          </div>
+          <h1>博物馆展陈可视化调研</h1>
         </header>
 
         <StageNav
           screen={screen}
           canCollect={missingInfo.length === 0}
-          onHome={() => setScreen("intro")}
-          onCollect={() => setScreen("collect")}
-          onReview={() => setScreen("review")}
+          onHome={() => navigateFromTop("intro")}
+          onCollect={collectFromTop}
+          onReview={reviewFromTop}
         />
       </div>
 
@@ -409,8 +633,9 @@ function App() {
           <IntroScreen
             draft={draft}
             patchInfo={patchInfo}
+            onAddFloorplanFiles={addFloorplanFiles}
+            onRemoveFloorplanAsset={removeFloorplanAsset}
             onContinue={continueFromInfo}
-            onReset={resetDraft}
           />
         ) : null}
 
@@ -430,9 +655,12 @@ function App() {
         {screen === "unit" && activeUnit ? (
           <UnitScreen
             unit={activeUnit}
-            onBack={() => setScreen("collect")}
+            onBack={returnFromUnit}
+            onConfirm={confirmUnit}
             onPatchUnit={(patch) => patchUnit(activeUnit.id, patch)}
-            onRemoveUnit={() => removeUnit(activeUnit.id)}
+            onRemoveUnit={
+              pendingUnit?.id === activeUnit.id ? undefined : () => removeUnit(activeUnit.id)
+            }
             onAddUnitFiles={(event, role, label) => addUnitFiles(event, activeUnit.id, role, label)}
             onRemoveUnitAsset={(assetId) => removeAsset(activeUnit.id, assetId)}
           />
@@ -442,11 +670,14 @@ function App() {
           <ItemScreen
             unit={activeUnit}
             activeItemId={activeItemId}
-            onBack={() => setScreen("collect")}
+            onBack={returnFromItem}
+            onConfirm={confirmItem}
             onPatchItem={(itemId, patch) => patchItem(activeUnit.id, itemId, patch)}
-            onToggleTag={(itemId, key, value) => toggleTag(activeUnit.id, itemId, key, value)}
             onAddItemFiles={(event, itemId, label, role) =>
               addItemFiles(event, activeUnit.id, itemId, label, role)
+            }
+            onTranscribeItemAudio={(itemId, section, blob) =>
+              transcribeItemAudio(activeUnit.id, itemId, section, blob)
             }
             onRemoveItemAsset={(itemId, assetId) => removeAsset(activeUnit.id, assetId, itemId)}
           />
@@ -456,7 +687,7 @@ function App() {
           <ReviewScreen
             draft={draft}
             stats={stats}
-            onBack={() => setScreen("collect")}
+            onJumpTo={jumpToReviewTarget}
             onExport={exportDraft}
             onSubmit={submitDraft}
           />

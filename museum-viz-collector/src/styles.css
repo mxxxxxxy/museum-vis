@@ -51,7 +51,7 @@ button {
   width: min(100%, 980px);
   min-height: 100vh;
   margin: 0 auto;
-  padding-bottom: 28px;
+  padding-bottom: 18px;
 }
 
 .top-stack {
@@ -67,8 +67,8 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 12px clamp(16px, 4vw, 28px) 9px;
+  gap: 10px;
+  padding: 9px clamp(12px, 3vw, 20px) 7px;
 }
 
 .app-header h1 {
@@ -87,26 +87,13 @@ button {
   text-transform: uppercase;
 }
 
-.draft-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-width: max-content;
-  padding: 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: rgba(255, 253, 248, 0.84);
-  color: var(--muted);
-  font-size: 13px;
-}
-
 .app-main {
-  padding: 16px clamp(14px, 4vw, 28px) 26px;
+  padding: 12px clamp(10px, 3vw, 20px) 18px;
 }
 
 .screen {
   display: grid;
-  gap: 16px;
+  gap: 10px;
 }
 
 .hero-panel,
@@ -114,7 +101,7 @@ button {
 .panel,
 .success-panel {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 5px;
   background: var(--surface);
   box-shadow: var(--shadow);
 }
@@ -122,7 +109,7 @@ button {
 .hero-panel,
 .intro-panel,
 .success-panel {
-  padding: 22px;
+  padding: 14px;
 }
 
 .hero-panel h2,
@@ -145,7 +132,7 @@ button {
 .empty-state p,
 .voice-card p,
 .block-title p {
-  margin: 8px 0 0;
+  margin: 5px 0 0;
   color: var(--muted);
   line-height: 1.65;
 }
@@ -156,19 +143,19 @@ button {
   justify-content: center;
   width: 48px;
   height: 48px;
-  margin-bottom: 14px;
-  border-radius: 8px;
+  margin-bottom: 8px;
+  border-radius: 5px;
   background: rgba(15, 118, 110, 0.12);
   color: var(--brand);
 }
 
 .intro-screen {
-  gap: 12px;
+  gap: 9px;
 }
 
 .intro-panel {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .intro-panel.is-complete {
@@ -202,16 +189,15 @@ button {
 .intro-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 4px;
+  gap: 8px;
+  margin-top: 2px;
 }
 
 .accordion {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 5px;
   background: var(--surface);
   box-shadow: var(--shadow);
-  overflow: hidden;
 }
 
 .accordion.open {
@@ -222,11 +208,11 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
   border: 0;
   background: transparent;
-  padding: 13px 16px;
+  padding: 10px 12px;
   color: inherit;
   text-align: left;
   cursor: pointer;
@@ -235,7 +221,7 @@ button {
 .accordion-head-main {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 9px;
   min-width: 0;
 }
 
@@ -243,9 +229,9 @@ button {
   display: inline-grid;
   place-items: center;
   flex: 0 0 auto;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 4px;
   background: rgba(15, 118, 110, 0.12);
   color: var(--brand);
 }
@@ -264,7 +250,7 @@ button {
 .accordion-head-right {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex: 0 0 auto;
 }
 
@@ -281,8 +267,8 @@ button {
 .check-badge {
   display: inline-grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   border-radius: 999px;
   background: rgba(21, 128, 61, 0.14);
   color: var(--success);
@@ -290,13 +276,13 @@ button {
 
 .accordion-body {
   border-top: 1px solid var(--line);
-  padding: 16px;
+  padding: 12px;
 }
 
 .compact-note,
 .form-heading {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 5px;
   background: rgba(255, 253, 248, 0.72);
 }
 
@@ -310,8 +296,8 @@ button {
 .compact-note {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  padding: 11px 12px;
+  gap: 6px;
+  padding: 8px 10px;
 }
 
 .compact-note svg {
@@ -324,8 +310,8 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 10px 12px;
+  gap: 10px;
+  padding: 8px 10px;
 }
 
 .form-heading h2 {
@@ -341,20 +327,20 @@ button {
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 8px;
 }
 
 .form-grid.compact {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.field {
-  display: grid;
-  gap: 7px;
+.venue-form-grid {
+  --venue-inline-label-width: 80px;
 }
 
-.field-date {
-  width: min(100%, 240px);
+.field {
+  display: grid;
+  gap: 5px;
 }
 
 .field-wide {
@@ -365,10 +351,35 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   color: var(--muted);
   font-size: 13px;
   font-weight: 650;
+}
+
+.venue-form-grid .field,
+.venue-form-grid .field-block {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.venue-form-grid .field > span,
+.venue-form-grid .block-title h4 {
+  margin: 0;
+  color: var(--muted);
+  font: inherit;
+}
+
+.venue-form-grid .inline-field {
+  grid-template-columns: var(--venue-inline-label-width) minmax(0, 1fr) auto;
+}
+
+.venue-form-grid .inline-field-label {
+  width: var(--venue-inline-label-width);
+  font-size: 12.5px;
+  justify-content: flex-start;
 }
 
 .field b {
@@ -383,19 +394,26 @@ button {
 .field select,
 .field textarea {
   width: 100%;
-  min-height: 46px;
+  min-height: 40px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 5px;
   background: var(--surface);
   color: var(--ink);
-  padding: 11px 12px;
+  padding: 8px 10px;
   outline: none;
 }
 
 .field textarea {
-  min-height: 92px;
+  min-height: 78px;
   resize: vertical;
+  font-size: 14px;
+  font-weight: 400;
   line-height: 1.6;
+}
+
+.field textarea::placeholder {
+  color: color-mix(in srgb, var(--muted) 74%, transparent);
+  font-weight: 400;
 }
 
 .field input:focus,
@@ -419,9 +437,13 @@ button {
   box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.16);
 }
 
-.field-invalid b {
-  background: rgba(185, 28, 28, 0.12);
+.field-invalid > span {
   color: var(--danger);
+}
+
+.field-invalid b {
+  background: rgba(180, 83, 9, 0.12);
+  color: var(--accent);
 }
 
 .notice,
@@ -429,9 +451,9 @@ button {
 .ready-line {
   display: flex;
   align-items: center;
-  gap: 8px;
-  border-radius: 8px;
-  padding: 12px 14px;
+  gap: 6px;
+  border-radius: 5px;
+  padding: 9px 10px;
   line-height: 1.5;
 }
 
@@ -454,7 +476,7 @@ button {
 .upload-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .upload-grid {
@@ -464,7 +486,7 @@ button {
 .media-input-group {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 8px;
+  gap: 6px;
   min-width: min(100%, 320px);
 }
 
@@ -488,9 +510,9 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-height: 44px;
-  border-radius: 8px;
+  gap: 6px;
+  min-height: 40px;
+  border-radius: 5px;
   border: 1px solid transparent;
   cursor: pointer;
   font-weight: 750;
@@ -501,7 +523,7 @@ button {
 .secondary-button,
 .danger-button,
 .capture-button {
-  padding: 0 14px;
+  padding: 0 11px;
 }
 
 .primary-button {
@@ -532,12 +554,16 @@ button {
 }
 
 .primary-button.small {
-  min-height: 38px;
+  min-height: 34px;
+}
+
+.secondary-button.small {
+  min-height: 34px;
 }
 
 .icon-button {
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   border-color: var(--line);
   background: var(--surface);
@@ -563,19 +589,19 @@ button {
 .screen-top {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 9px;
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 
 .stat-card {
-  padding: 14px;
+  padding: 10px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 5px;
   background: rgba(255, 253, 248, 0.78);
 }
 
@@ -590,7 +616,7 @@ button {
 }
 
 .collect-screen {
-  gap: 12px;
+  gap: 9px;
 }
 
 .collect-heading,
@@ -598,7 +624,7 @@ button {
 .session-section,
 .area-action {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 5px;
   background: rgba(255, 253, 248, 0.78);
 }
 
@@ -606,8 +632,8 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 12px;
+  gap: 9px;
+  padding: 9px;
 }
 
 .collect-heading h2,
@@ -618,7 +644,7 @@ button {
 
 .collect-heading p,
 .session-section-title p {
-  margin: 5px 0 0;
+  margin: 3px 0 0;
   color: var(--muted);
   font-size: 13px;
   line-height: 1.5;
@@ -636,8 +662,8 @@ button {
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: 7px;
-  min-height: 52px;
+  gap: 5px;
+  min-height: 44px;
   background: rgba(255, 253, 248, 0.72);
   color: var(--muted);
   font-size: 13px;
@@ -650,38 +676,38 @@ button {
 
 .session-section {
   display: grid;
-  gap: 10px;
-  padding: 12px;
+  gap: 8px;
+  padding: 9px;
 }
 
 .session-section-title {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 12px;
+  gap: 9px;
 }
 
 .area-action {
   display: grid;
-  padding: 12px;
+  padding: 9px;
 }
 
 .session-list {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .session-card {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
+  gap: 9px;
   width: 100%;
-  min-height: 74px;
+  min-height: 62px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 5px;
   background: var(--surface);
-  padding: 12px;
+  padding: 9px;
   color: inherit;
   text-align: left;
   cursor: pointer;
@@ -690,9 +716,9 @@ button {
 .serial {
   display: inline-grid;
   place-items: center;
-  min-width: 44px;
-  height: 34px;
-  border-radius: 8px;
+  min-width: 38px;
+  height: 30px;
+  border-radius: 5px;
   background: rgba(15, 118, 110, 0.12);
   color: var(--brand);
   font-weight: 850;
@@ -705,7 +731,7 @@ button {
 
 .session-card em {
   display: block;
-  margin-top: 5px;
+  margin-top: 3px;
   color: var(--muted);
   font-size: 13px;
   font-style: normal;
@@ -713,15 +739,23 @@ button {
 
 .panel {
   display: grid;
-  gap: 16px;
-  padding: 16px;
+  gap: 10px;
+  padding: 12px;
 }
 
 .section-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 9px;
+}
+
+.section-heading-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .section-heading h2,
@@ -735,24 +769,24 @@ button {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .item-tabs {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   overflow-x: auto;
-  padding-bottom: 4px;
+  padding-bottom: 2px;
 }
 
 .item-tabs button {
   min-width: max-content;
-  min-height: 38px;
+  min-height: 34px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 5px;
   background: var(--surface);
   color: var(--muted);
-  padding: 0 12px;
+  padding: 0 9px;
   font-weight: 800;
 }
 
@@ -764,38 +798,104 @@ button {
 
 .item-editor {
   display: grid;
-  gap: 16px;
-  padding-top: 4px;
+  gap: 10px;
+  padding-top: 2px;
 }
 
 .item-name-block {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .item-name-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 
 /* override the mobile full-width button rule so 确认 stays content-width beside 回退 */
-.item-name-bar .primary-button {
+.item-name-bar .primary-button,
+.item-name-bar .secondary-button {
   width: auto;
+}
+
+.inline-field {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+  padding: 0 10px;
+}
+
+.inline-field:focus-within {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+}
+
+.inline-field-label {
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.inline-field-required {
+  justify-self: end;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(180, 83, 9, 0.12);
+  color: var(--accent);
+  font-size: 11px;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.inline-field input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  padding: 0;
+  outline: none;
+}
+
+.inline-field input::placeholder {
+  color: color-mix(in srgb, var(--muted) 74%, transparent);
+}
+
+.inline-field-invalid {
+  border-color: var(--danger);
+  background: rgba(185, 28, 28, 0.04);
+}
+
+.inline-field-invalid:focus-within {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.16);
+}
+
+.inline-field-invalid .inline-field-label {
+  color: var(--danger);
 }
 
 .media-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 
 .media-tile {
   position: relative;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 5px;
   background: var(--surface-2);
 }
 
@@ -810,10 +910,10 @@ button {
 
 .audio-tile {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   place-items: center;
-  min-height: 120px;
-  padding: 12px;
+  min-height: 104px;
+  padding: 9px;
   color: var(--brand);
 }
 
@@ -824,7 +924,7 @@ button {
 .media-meta {
   display: grid;
   gap: 2px;
-  padding: 9px;
+  padding: 7px;
 }
 
 .media-meta strong {
@@ -838,14 +938,14 @@ button {
 
 .remove-media {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 5px;
+  right: 5px;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border: 0;
-  border-radius: 8px;
+  border-radius: 5px;
   background: rgba(24, 32, 31, 0.68);
   color: #fff;
   cursor: pointer;
@@ -854,21 +954,21 @@ button {
 .empty-media,
 .empty-state {
   border: 1px dashed #bac5bf;
-  border-radius: 8px;
+  border-radius: 5px;
   background: rgba(255, 253, 248, 0.58);
   color: var(--muted);
 }
 
 .empty-media {
-  padding: 18px;
+  padding: 12px;
   line-height: 1.6;
 }
 
 .empty-state {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   justify-items: center;
-  padding: 34px 22px;
+  padding: 14px 10px;
   text-align: center;
 }
 
@@ -895,10 +995,10 @@ button {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 18px;
-  padding: 10px 14px;
+  gap: 5px 12px;
+  padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 5px;
   background: rgba(255, 253, 248, 0.78);
   color: var(--muted);
   font-size: 14px;
@@ -911,7 +1011,7 @@ button {
 
 .unit-card {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 5px;
   background: var(--surface);
   overflow: hidden;
 }
@@ -929,13 +1029,13 @@ button {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: 9px;
   flex: 1 1 auto;
   min-width: 0;
-  min-height: 74px;
+  min-height: 62px;
   border: 0;
   background: transparent;
-  padding: 12px;
+  padding: 9px;
   color: inherit;
   text-align: left;
   cursor: pointer;
@@ -952,7 +1052,7 @@ button {
 
 .unit-card-text em {
   display: block;
-  margin-top: 5px;
+  margin-top: 3px;
   color: var(--muted);
   font-size: 13px;
   font-style: normal;
@@ -962,7 +1062,7 @@ button {
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  width: 54px;
+  width: 44px;
   border: 0;
   border-left: 1px solid var(--line);
   background: rgba(15, 118, 110, 0.04);
@@ -982,10 +1082,10 @@ button {
 
 .unit-card-drawer {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   border-top: 1px solid var(--line);
   background: rgba(247, 241, 232, 0.5);
-  padding: 12px;
+  padding: 9px;
 }
 
 .drawer-empty {
@@ -996,7 +1096,7 @@ button {
 
 .viz-item-list {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1005,21 +1105,21 @@ button {
 .viz-item {
   display: flex;
   align-items: stretch;
-  gap: 8px;
+  gap: 6px;
 }
 
 .viz-item-main {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex: 1 1 auto;
   min-width: 0;
-  min-height: 48px;
+  min-height: 42px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 5px;
   background: var(--surface);
-  padding: 8px 10px;
+  padding: 6px 8px;
   color: inherit;
   text-align: left;
   cursor: pointer;
@@ -1029,9 +1129,9 @@ button {
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  width: 44px;
+  width: 38px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 5px;
   background: var(--surface);
   color: var(--danger);
   cursor: pointer;
@@ -1040,10 +1140,10 @@ button {
 .viz-serial {
   display: inline-grid;
   place-items: center;
-  min-width: 32px;
-  height: 28px;
-  padding: 0 8px;
-  border-radius: 6px;
+  min-width: 28px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 4px;
   background: rgba(15, 118, 110, 0.1);
   color: var(--brand);
   font-size: 13px;
@@ -1061,7 +1161,8 @@ button {
   width: 100%;
 }
 
-.section-heading .primary-button {
+.section-heading .primary-button,
+.section-heading .secondary-button {
   flex: 0 0 auto;
   width: auto;
 }
@@ -1075,18 +1176,18 @@ button {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: 9px;
 }
 
 .hier-row .hier-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 40px;
-  width: 40px;
-  height: 40px;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
   margin-top: 0;
-  border-radius: 10px;
+  border-radius: 4px;
   background: rgba(15, 118, 110, 0.12);
   color: var(--brand);
   line-height: 0;
@@ -1104,7 +1205,7 @@ button {
 
 .hier-row > div > span {
   display: block;
-  margin-top: 3px;
+  margin-top: 2px;
   color: var(--muted);
   font-size: 13px;
   line-height: 1.5;
@@ -1112,14 +1213,14 @@ button {
 
 .hier-line {
   width: 2px;
-  height: 14px;
-  margin-left: 19px;
+  height: 10px;
+  margin-left: 16px;
   background: rgba(15, 118, 110, 0.28);
 }
 
 .flow-steps {
   display: grid;
-  gap: 14px;
+  gap: 10px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1130,14 +1231,14 @@ button {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
-  gap: 12px;
+  gap: 9px;
 }
 
 .flow-steps .step-no {
   display: inline-grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   border-radius: 999px;
   background: var(--brand);
   color: #fff;
@@ -1159,43 +1260,360 @@ button {
 
 .field-block {
   display: grid;
-  gap: 10px;
+  gap: 8px;
+}
+
+.field-helper {
+  margin: -2px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.field-block-invalid .photo-upload-panel,
+.choice-block-invalid .chip-grid {
+  border: 1px solid rgba(185, 28, 28, 0.28);
+  border-radius: 5px;
+  background: rgba(185, 28, 28, 0.04);
+  padding: 6px;
+}
+
+.field-block-invalid .block-title h4,
+.choice-block-invalid .block-title h4 {
+  color: var(--danger);
+}
+
+.field-block-invalid .photo-add-button {
+  border-color: rgba(185, 28, 28, 0.35);
+  background: rgba(185, 28, 28, 0.08);
+  color: var(--danger);
 }
 
 .field-emphasis textarea {
-  min-height: 120px;
+  min-height: 96px;
 }
 
-.field-emphasis b {
-  padding: 0;
-  background: transparent;
-  color: var(--muted);
+.field-emphasis:not(.field-invalid) b {
+  padding: 2px 6px;
+  background: rgba(180, 83, 9, 0.12);
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.description-sections {
+  display: grid;
+  gap: 10px;
+}
+
+.description-section-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.description-section {
+  gap: 6px;
+}
+
+.description-section .field-helper {
+  margin: -2px 0 0;
+}
+
+.description-section textarea {
+  min-height: 100px;
+}
+
+/* 标题+必填靠左成组（标题组宽度自适应、左侧固定），语音按钮留在最右侧。
+   这样语音按钮宽度变化时，左边的标题和必填不会跟着左右晃动。 */
+.description-section .description-section-title {
+  flex: 0 1 auto;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+.voice-input {
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.voice-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--brand);
+  font-size: 12px;
   font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.voice-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.voice-button.is-recording {
+  border-color: var(--danger);
+  background: var(--danger);
+  color: #fff;
+  animation: voice-pulse 1.2s ease-in-out infinite;
+}
+
+.voice-error {
+  color: var(--danger);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.voice-spin {
+  animation: voice-spin 0.9s linear infinite;
+}
+
+@keyframes voice-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes voice-pulse {
+  50% {
+    opacity: 0.72;
+  }
+}
+
+.block-title h4 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-grid .field-block .block-title h4 {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.item-editor .field > span,
+.item-editor .block-title h4 {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.item-editor .field-invalid > span,
+.item-editor .field-block-invalid .block-title h4,
+.item-editor .choice-block-invalid .block-title h4 {
+  color: var(--danger);
+}
+
+.photo-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.required-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  border-radius: 999px;
+  background: rgba(180, 83, 9, 0.12);
+  color: var(--accent);
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.field-block-invalid .required-badge,
+.choice-block-invalid .required-badge {
+  background: rgba(180, 83, 9, 0.12);
+  color: var(--accent);
+}
+
+.photo-upload-panel {
+  display: grid;
+  gap: 8px;
+}
+
+.photo-add-wrap {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.photo-add-button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(15, 118, 110, 0.28);
+  border-radius: 5px;
+  background: rgba(15, 118, 110, 0.1);
+  color: var(--brand);
+  cursor: pointer;
+}
+
+.photo-add-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  display: grid;
+  gap: 4px;
+  min-width: 128px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+  box-shadow: 0 12px 30px rgba(24, 32, 31, 0.16);
+  padding: 4px;
+}
+
+.photo-add-menu label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  border-radius: 4px;
+  color: var(--ink);
+  padding: 0 7px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.photo-add-menu label:hover {
+  background: rgba(15, 118, 110, 0.08);
+}
+
+.photo-add-menu input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.photo-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 6px;
+}
+
+.photo-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+}
+
+.photo-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: #dfe5e2;
+}
+
+.photo-card select {
+  display: block;
+  width: 100%;
+  min-height: 36px;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background-color: rgba(247, 241, 232, 0.58);
+  appearance: none;
+  -webkit-appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--brand-strong) 50%),
+    linear-gradient(135deg, var(--brand-strong) 50%, transparent 50%);
+  background-position:
+    calc(100% - 19px) 50%,
+    calc(100% - 13px) 50%;
+  background-size:
+    6px 6px,
+    6px 6px;
+  background-repeat: no-repeat;
+  min-width: 0;
+  color: var(--brand-strong);
+  padding: 0 30px 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+  outline: none;
+}
+
+.photo-card select:focus {
+  background-color: rgba(15, 118, 110, 0.08);
+  box-shadow: inset 0 0 0 2px rgba(15, 118, 110, 0.16);
+}
+
+.photo-card-size {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  border-radius: 999px;
+  background: rgba(24, 32, 31, 0.68);
+  color: #fff;
+  padding: 2px 5px;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.photo-card-remove {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(176, 45, 43, 0.86);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(20, 24, 23, 0.18);
+}
+
+.audio-upload-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .choice-block,
 .voice-list {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .chip-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  min-height: 36px;
+  gap: 4px;
+  min-height: 32px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--surface);
   color: var(--ink);
-  padding: 0 12px;
+  padding: 0 9px;
   cursor: pointer;
 }
 
@@ -1209,12 +1627,12 @@ button {
 .voice-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
+  gap: 9px;
   align-items: center;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 5px;
   background: rgba(247, 241, 232, 0.62);
-  padding: 12px;
+  padding: 9px;
 }
 
 .voice-card strong {
@@ -1223,7 +1641,7 @@ button {
 
 .voice-card em {
   display: block;
-  margin-top: 8px;
+  margin-top: 5px;
   color: var(--muted);
   font-style: normal;
   font-size: 13px;
@@ -1231,32 +1649,98 @@ button {
 
 .voice-card audio {
   width: 100%;
-  margin-top: 10px;
+  margin-top: 7px;
 }
 
 .voice-actions {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   justify-items: stretch;
 }
 
 .warning-list {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   margin: 0;
-  padding-left: 22px;
-  color: #7c2d12;
-  line-height: 1.6;
+  padding: 0;
+  list-style: none;
+}
+
+.warning-jump {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid rgba(185, 28, 28, 0.25);
+  border-radius: 5px;
+  background: rgba(185, 28, 28, 0.07);
+  color: var(--danger);
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.warning-jump:hover {
+  border-color: rgba(185, 28, 28, 0.45);
+  background: rgba(185, 28, 28, 0.12);
+}
+
+.warning-jump svg {
+  flex: 0 0 auto;
+  color: var(--danger);
+}
+
+.collapse-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.collapse-head .chevron,
+.collapse-head .chevron-open {
+  flex: 0 0 auto;
+  color: var(--muted);
+  transition: transform 0.18s ease;
+}
+
+.collapse-head .chevron-open {
+  transform: rotate(180deg);
+  color: var(--brand);
+}
+
+.review-screen .panel h2 {
+  font-size: 17px;
+  line-height: 1.3;
+}
+
+.review-screen .stats-line {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
 }
 
 .status-ok {
   display: inline-flex;
   align-items: center;
-  height: 30px;
+  height: 26px;
   border-radius: 999px;
   background: rgba(21, 128, 61, 0.12);
   color: var(--success);
-  padding: 0 10px;
+  padding: 0 8px;
   font-size: 13px;
   font-weight: 800;
 }
@@ -1266,10 +1750,10 @@ button {
   max-height: 280px;
   margin: 0;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 5px;
   background: #17201e;
   color: #d9fff7;
-  padding: 14px;
+  padding: 10px;
   font-size: 12px;
   line-height: 1.55;
 }
@@ -1285,8 +1769,8 @@ button {
 .stage-nav {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  padding: 0 clamp(16px, 4vw, 28px) 10px;
+  gap: 6px;
+  padding: 0 clamp(12px, 3vw, 20px) 7px;
   overflow: hidden;
 }
 
@@ -1294,10 +1778,10 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  min-height: 38px;
+  gap: 5px;
+  min-height: 34px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 5px;
   background: rgba(255, 253, 248, 0.72);
   color: var(--muted);
   cursor: pointer;
@@ -1321,21 +1805,17 @@ button {
     align-items: flex-start;
   }
 
-  .draft-pill span {
-    display: none;
-  }
-
   .form-grid,
   .form-grid.compact {
     grid-template-columns: 1fr;
   }
 
   .stats-grid {
-    gap: 8px;
+    gap: 6px;
   }
 
   .stat-card {
-    padding: 12px 10px;
+    padding: 8px;
   }
 
   .stat-card strong {
@@ -1351,7 +1831,7 @@ button {
 
   .intro-panel,
   .success-panel {
-    padding: 16px;
+    padding: 12px;
   }
 
   .intro-panel h2 {
@@ -1374,13 +1854,14 @@ button {
 
   .action-row,
   .toolbar,
-  .upload-grid {
+  .upload-grid,
+  .audio-upload-row {
     display: grid;
     grid-template-columns: 1fr;
   }
 
-  .field-date {
-    width: min(100%, 210px);
+  .photo-gallery {
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
   }
 
   .primary-button,
