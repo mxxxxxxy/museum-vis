@@ -29,10 +29,11 @@ import {
 import { CollectScreen } from "./screens/CollectScreen";
 import { IntroScreen } from "./screens/IntroScreen";
 import { ItemScreen } from "./screens/ItemScreen";
+import { LocalReviewBrowser } from "./screens/LocalReviewBrowser";
 import { ReviewScreen, type ReviewTarget } from "./screens/ReviewScreen";
 import { SuccessScreen } from "./screens/SuccessScreen";
 import { UnitScreen } from "./screens/UnitScreen";
-import type { AssetRole, MediaAsset, Screen, SubmissionInfo, Unit, VizItem } from "./types";
+import type { AssetRole, Draft, MediaAsset, Screen, SubmissionInfo, Unit, VizItem } from "./types";
 
 // 同设备恢复：上次已点过“数据收集”、且本地草稿里必填信息仍齐全时，
 // 刷新后直接回到采集流程，而不是被打回锁定的首页。
@@ -48,7 +49,7 @@ function loadPersistedEntered(): boolean {
   }
 }
 
-function App() {
+function CollectorApp() {
   const [draft, setDraft] = useState(() => {
     try {
       const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -202,10 +203,12 @@ function App() {
         setNotice("服务器上的展览平面图删除失败，本地草稿已先移除。");
       });
     }
-    setDraft((current) => ({
-      ...current,
-      floorplanAssets: current.floorplanAssets.filter((candidate) => candidate.id !== assetId),
-    }));
+    const nextDraft = {
+      ...draft,
+      floorplanAssets: draft.floorplanAssets.filter((candidate) => candidate.id !== assetId),
+    };
+    setDraft(nextDraft);
+    persistDraftAfterAssetRemoval(nextDraft);
   }
 
   function addUnit() {
@@ -532,9 +535,9 @@ function App() {
       return;
     }
 
-    setDraft((current) => ({
-      ...current,
-      units: current.units.map((unit) => {
+    const nextDraft = {
+      ...draft,
+      units: draft.units.map((unit) => {
         if (unit.id !== unitId) return unit;
         if (!itemId) {
           return {
@@ -551,7 +554,16 @@ function App() {
           ),
         };
       }),
-    }));
+    };
+    setDraft(nextDraft);
+    persistDraftAfterAssetRemoval(nextDraft);
+  }
+
+  function persistDraftAfterAssetRemoval(nextDraft: Draft) {
+    if (!getDraftUserIdentity(nextDraft)) return;
+    saveDraftToServer(nextDraft).catch(() => {
+      setNotice("媒体引用已从本地移除，但服务器草稿同步失败。请进入“检查”页再保存一次。");
+    });
   }
 
   function findAsset(unitId: string, assetId: string, itemId?: string): MediaAsset | null {
@@ -799,6 +811,7 @@ function App() {
           <ItemScreen
             unit={activeUnit}
             activeItemId={activeItemId}
+            floorplanAssets={draft.floorplanAssets}
             onBack={returnFromItem}
             onConfirm={confirmItem}
             onPatchItem={(itemId, patch) => patchItem(activeUnit.id, itemId, patch)}
@@ -833,6 +846,13 @@ function App() {
       </main>
     </div>
   );
+}
+
+function App() {
+  if (new URLSearchParams(window.location.search).get("review") === "1") {
+    return <LocalReviewBrowser />;
+  }
+  return <CollectorApp />;
 }
 
 export default App;

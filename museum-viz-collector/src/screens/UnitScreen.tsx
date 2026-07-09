@@ -64,7 +64,7 @@ export function UnitScreen({
             value={unit.name}
             required
             invalid={nameInvalid}
-            placeholder="例如：序幕厅、今日北大展厅"
+            placeholder="如：序幕等"
             className="field-wide"
             onChange={(value) => onPatchUnit({ name: value })}
           />
@@ -75,7 +75,7 @@ export function UnitScreen({
             </span>
             <textarea
               value={unit.description}
-              placeholder="可以从两方面描述：① 位置——它在展览中的位置（如首层东侧、入口右手边、主展线中段）；② 环境——人流、灯光、遮挡、展线方向等。"
+              placeholder="包括但不限于位置、环境（人流、灯光、遮挡、展线方向）、主题等。"
               onChange={(event) => onPatchUnit({ description: event.target.value })}
             />
           </label>

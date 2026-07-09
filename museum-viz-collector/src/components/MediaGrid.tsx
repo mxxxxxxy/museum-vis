@@ -1,4 +1,5 @@
 import { Trash2 } from "lucide-react";
+import { HeicImage } from "./HeicImage";
 import { formatBytes } from "../lib/media";
 import type { MediaAsset } from "../types";
 
@@ -23,7 +24,7 @@ export function MediaGrid({
                 <audio controls src={src} />
               </div>
             ) : (
-              <img src={src} alt={asset.label} />
+              <HeicImage src={src} type={asset.type} name={asset.name} alt={asset.label} />
             )}
             <div className="media-meta">
               <strong>{asset.label}</strong>

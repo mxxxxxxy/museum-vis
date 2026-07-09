@@ -2,6 +2,7 @@ import { emptyInfo, itemDescriptionSections } from "../constants";
 import type {
   AssetRole,
   Draft,
+  FloorplanLocation,
   MediaAsset,
   SubmissionInfo,
   Unit,
@@ -30,6 +31,7 @@ export function createItem(index: number): VizItem {
     serial: `${index}`,
     title: "",
     locationDescription: "",
+    floorplanLocation: null,
     description: createEmptyItemDescription(),
     photos: [],
   };
@@ -92,6 +94,22 @@ type LegacyVizItem = Partial<Omit<VizItem, "description">> & {
   notes?: string;
 };
 
+function normalizeRatio(value: unknown): number | null {
+  const numberValue = Number(value);
+  if (!Number.isFinite(numberValue)) return null;
+  return Math.min(1, Math.max(0, numberValue));
+}
+
+function normalizeFloorplanLocation(value: unknown): FloorplanLocation | null {
+  if (!value || typeof value !== "object") return null;
+  const location = value as Partial<FloorplanLocation>;
+  const assetId = typeof location.assetId === "string" ? location.assetId : "";
+  const xRatio = normalizeRatio(location.xRatio);
+  const yRatio = normalizeRatio(location.yRatio);
+  if (!assetId || xRatio === null || yRatio === null) return null;
+  return { assetId, xRatio, yRatio };
+}
+
 function normalizeItemDescription(
   description: LegacyVizItem["description"],
   notes?: string,
@@ -117,6 +135,7 @@ function normalizeItem(item: LegacyVizItem): VizItem {
     serial: item.serial ?? "",
     title: item.title ?? "",
     locationDescription: item.locationDescription ?? "",
+    floorplanLocation: normalizeFloorplanLocation(item.floorplanLocation),
     description: normalizeItemDescription(item.description, item.notes),
     photos: (item.photos ?? []).map((asset) => normalizeAsset(asset, "photo")),
   };

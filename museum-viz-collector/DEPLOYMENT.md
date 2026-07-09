@@ -49,14 +49,14 @@ DEPLOY_HOST=49.233.250.13 \
 DEPLOY_USER=root \
 DEPLOY_PATH=/opt/museum-viz-collector \
 STATIC_WEB_ROOT=/usr/share/nginx/html/collection \
-./scripts/deploy-python-rsync.sh
+./ops/deploy-python-rsync.sh
 ```
 
 这个脚本会：
 
 1. 在本机执行 `npm run build`。
 2. 把 `dist/` 上传到服务器的 `collection` 目录。
-3. 把 `server/python_server.py` 上传到服务器。
+3. 把 `backend/python_server.py` 上传到服务器。
 
 如果你的 Nginx 目录不是 `/usr/share/nginx/html/collection`，把 `STATIC_WEB_ROOT` 改成真实路径。
 
@@ -66,7 +66,7 @@ STATIC_WEB_ROOT=/usr/share/nginx/html/collection \
 
 ```bash
 cd /opt/museum-viz-collector
-python server/python_server.py
+python backend/python_server.py
 ```
 
 默认端口就是 `8787`，默认数据目录就是当前项目的 `data/`。
@@ -91,10 +91,10 @@ curl http://127.0.0.1:8787/exhibition_api/health
 
    ```bash
    cd /opt/museum-viz-collector
-   pkill -f server/python_server.py
+   pkill -f backend/python_server.py
    TENCENT_SECRET_ID=你的SecretId \
    TENCENT_SECRET_KEY=你的SecretKey \
-   nohup python server/python_server.py > python-server.log 2>&1 &
+   nohup python backend/python_server.py > python-server.log 2>&1 &
    ```
 
    可选环境变量：`TENCENT_ASR_REGION`（默认 `ap-guangzhou`）、`TENCENT_ASR_ENGINE`（默认 `16k_zh` 中文普通话）。
@@ -158,7 +158,7 @@ sudo systemctl reload nginx
 
 ```bash
 cd /opt/museum-viz-collector
-nohup python server/python_server.py > python-server.log 2>&1 &
+nohup python backend/python_server.py > python-server.log 2>&1 &
 ```
 
 查看：
@@ -170,5 +170,19 @@ tail -f python-server.log
 停止：
 
 ```bash
-pkill -f server/python_server.py
+pkill -f backend/python_server.py
 ```
+
+
+### 数据同步
+
+服务器数据拉到本地：(默认会从root@49.233.250.13:/opt/museum-viz-collector/data/同步到本地：/Users/mxy/Desktop/博物馆可视化/museum-viz-collector/data/)
+```bash
+cd /Users/mxy/Desktop/博物馆可视化/museum-viz-collector
+npm run sync:data
+```
+打开本地浏览页：npm run review:data
+
+访问：http://127.0.0.1:5173/?review=1
+
+**后端只有在 MUSEUM_VIZ_REVIEW=1 时才开放“列出全部提交”的接口，正常线上部署不会默认暴露这个接口。浏览页可以按姓名、手机号、博物馆、展览搜索，左侧选提交，右侧看详情、图片/音频和导出单份 JSON。**

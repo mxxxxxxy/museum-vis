@@ -26,15 +26,16 @@ DATA_DIR = Path(os.environ.get("MUSEUM_VIZ_DATA_DIR", APP_ROOT / "data")).resolv
 MAX_UPLOAD_BYTES = int(os.environ.get("MAX_UPLOAD_BYTES", str(50 * 1024 * 1024)))
 API_PREFIX = "/exhibition_api"
 UPLOADS_PREFIX = "/exhibition_uploads"
+REVIEW_ENABLED = os.environ.get("MUSEUM_VIZ_REVIEW", "").lower() in ("1", "true", "yes")
 
 SUBMISSIONS_ROOT = DATA_DIR / "submissions"
 UPLOADS_ROOT = DATA_DIR / "uploads"
 
 
 def _load_env_file():
-    """从 server/.env 读取环境变量（每行 KEY=VALUE），方便本地和服务器配置密钥。
+    """从 backend/.env 读取环境变量（每行 KEY=VALUE），方便本地和服务器配置密钥。
     已经存在的真实环境变量优先，不会被文件覆盖。"""
-    env_path = Path(os.environ.get("MUSEUM_VIZ_ENV_FILE", APP_ROOT / "server" / ".env"))
+    env_path = Path(os.environ.get("MUSEUM_VIZ_ENV_FILE", APP_ROOT / "backend" / ".env"))
     try:
         lines = env_path.read_text(encoding="utf-8").splitlines()
     except OSError:
@@ -195,6 +196,54 @@ def read_draft_file(path, user_name, user_phone):
 
 def read_draft(user_name, user_phone):
     return read_draft_file(submission_dir(user_name, user_phone) / "draft.json", user_name, user_phone)
+
+
+def count_draft_content(draft):
+    units = draft.get("units") if isinstance(draft.get("units"), list) else []
+    item_count = 0
+    asset_count = len(draft.get("floorplanAssets") or [])
+    for unit in units:
+        if not isinstance(unit, dict):
+            continue
+        assets = unit.get("environmentAssets") if isinstance(unit.get("environmentAssets"), list) else []
+        items = unit.get("items") if isinstance(unit.get("items"), list) else []
+        asset_count += len(assets)
+        item_count += len(items)
+        for item in items:
+            if isinstance(item, dict):
+                asset_count += len(item.get("photos") or [])
+    return {"units": len(units), "items": item_count, "assets": asset_count}
+
+
+def list_review_submissions():
+    submissions = []
+    if not SUBMISSIONS_ROOT.exists():
+        return submissions
+    for draft_path in sorted(SUBMISSIONS_ROOT.glob("*/draft.json")):
+        user_key = draft_path.parent.name
+        try:
+            with draft_path.open("r", encoding="utf-8") as file:
+                draft = json.load(file)
+        except Exception:
+            continue
+        info = draft.get("info") if isinstance(draft.get("info"), dict) else {}
+        submissions.append({
+            "userKey": user_key,
+            "draft": draft,
+            "stats": count_draft_content(draft),
+            "updatedAt": draft.get("updatedAt") or "",
+            "submittedAt": draft.get("submittedAt") or "",
+            "status": draft.get("status") or "draft",
+            "submitterName": info.get("submitterName") or "",
+            "submitterPhone": info.get("submitterPhone") or "",
+            "museumName": info.get("museumName") or "",
+            "exhibitionName": info.get("exhibitionName") or "",
+        })
+    return sorted(
+        submissions,
+        key=lambda item: (item.get("stats") or {}).get("assets") or 0,
+        reverse=True,
+    )
 
 
 def write_draft(user_name, user_phone, draft):
@@ -534,7 +583,12 @@ class MuseumVizHandler(BaseHTTPRequestHandler):
 
         try:
             if self.command == "GET" and path == API_PREFIX + "/health":
-                return self.send_json(200, {"ok": True, "dataDir": str(DATA_DIR)})
+                return self.send_json(200, {"ok": True, "dataDir": str(DATA_DIR), "reviewEnabled": REVIEW_ENABLED})
+
+            if self.command == "GET" and path == API_PREFIX + "/review/submissions":
+                if not REVIEW_ENABLED:
+                    return self.send_json(403, {"error": "REVIEW_DISABLED"})
+                return self.send_json(200, {"submissions": list_review_submissions()})
 
             if self.command == "POST" and path == API_PREFIX + "/session":
                 body = self.read_json()

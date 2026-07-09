@@ -1,4 +1,7 @@
 .vercel
 
+# 本地采集数据和分析输出，不要提交
+/data/
+
 # 后端密钥，不要提交
-server/.env
+backend/.env

@@ -29,11 +29,18 @@ export type MediaAsset = {
   createdAt: string;
 };
 
+export type FloorplanLocation = {
+  assetId: string;
+  xRatio: number;
+  yRatio: number;
+};
+
 export type VizItem = {
   id: string;
   serial: string;
   title: string;
   locationDescription: string;
+  floorplanLocation: FloorplanLocation | null;
   description: VizItemDescription;
   photos: MediaAsset[];
 };
